@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Calendar Task Celebration",
-  "version": "1.0",
-  "description": "Plays a sound and shows confetti when a task is completed in Google Calendar.",
+  "name": "Calendar Level Up",
+  "version": "2.1",
+  "description": "Adds a level-up progress bar to Google Calendar.",
+  "permissions": [
+    "storage"
+  ],
   "content_scripts": [
     {
       "matches": ["https://calendar.google.com/*"],
@@ -11,7 +14,10 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/success.mp3"],
+      "resources": [
+        "assets/success.mp3",
+        "assets/level_up.mp3"
+      ],
       "matches": ["https://calendar.google.com/*"]
     }
   ]
