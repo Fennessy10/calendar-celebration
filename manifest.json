@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Calendar Task Celebration",
+  "version": "1.0",
+  "description": "Plays a sound and shows confetti when a task is completed in Google Calendar.",
+  "content_scripts": [
+    {
+      "matches": ["https://calendar.google.com/*"],
+      "js": ["assets/confetti.js", "content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/success.mp3"],
+      "matches": ["https://calendar.google.com/*"]
+    }
+  ]
+}
