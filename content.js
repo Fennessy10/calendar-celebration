@@ -9,7 +9,7 @@ const XP_INCREASE_PER_LEVEL = 30; // Slower ramp-up
 function playTaskCompleteSound() {
   const soundUrl = chrome.runtime.getURL('assets/success.mp3');
   const audio = new Audio(soundUrl);
-  audio.volume = 0.5; // Set volume to 50%
+  audio.volume = 0.1; // Set volume to 50%
   audio.play().catch(e => console.error("Error playing task sound:", e));
 }
 
