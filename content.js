@@ -2,47 +2,51 @@ console.log("Calendar Level Up Extension Loaded! 🚀");
 
 // --- SETTINGS (Easier Leveling) ---
 const XP_PER_TASK = 20;
-const BASE_XP_FOR_LEVEL_UP = 80;
-const XP_INCREASE_PER_LEVEL = 30;
+const BASE_XP_FOR_LEVEL_UP = 300; // Fixed 300 XP per level
+const XP_INCREASE_PER_LEVEL = 0;  // No increase per level
 
-// --- COLOR GRADIENTS ---
+// --- COLOR GRADIENTS (Updates every 5 levels) ---
+// Avoiding basic Blue, Green, Yellow as requested.
 const colorTiers = [
-  'linear-gradient(90deg, #4285F4, #90b8f8)', // Levels 1-9 (Blue)
-  'linear-gradient(90deg, #34A853, #81c995)', // Levels 10-19 (Green)
-  'linear-gradient(90deg, #FBBC04, #fdd663)', // Levels 20-29 (Yellow)
-  'linear-gradient(90deg, #EA4335, #f28b82)', // Levels 30-39 (Red)
-  'linear-gradient(90deg, #9b59b6, #c39bd3)', // Levels 40-49 (Purple)
-  'linear-gradient(90deg, #e67e22, #f0b27a)', // Levels 50-59 (Orange)
-  'linear-gradient(90deg, #1abc9c, #76d7c4)', // Levels 60-69 (Turquoise)
-  'linear-gradient(90deg, #f1c40f, #f7dc6f)', // Levels 70-79 (Gold)
-  'linear-gradient(90deg, #bdc3c7, #e0e0e0)', // Levels 80-89 (Silver)
-  'linear-gradient(90deg, #00A896, #02C39A)', // Levels 90-99 (Teal)
-  'linear-gradient(90deg, #d63384, #ff69b4)', // Levels 100-109 (Magenta)
-  'linear-gradient(90deg, #483D8B, #6A5ACD)', // Levels 110-119 (Cosmic Blue)
-  'linear-gradient(90deg, #FF4E50, #F9D423)', // Levels 120-129 (Sunset Fire)
-  'linear-gradient(90deg, #00c6ff, #0072ff)', // Levels 130+ (Deep Sky)
+  'linear-gradient(90deg, #FF512F, #DD2476)', // Levels 1-4: Bloody Mary (Red/Pink)
+  'linear-gradient(90deg, #8E2DE2, #4A00E0)', // Levels 5-9: Amin (Deep Purple)
+  'linear-gradient(90deg, #e65c00, #F9D423)', // Levels 10-14: Amber/Orange
+  'linear-gradient(90deg, #11998e, #38ef7d)', // Levels 15-19: Teal/Mint
+  'linear-gradient(90deg, #FC466B, #3F5EFB)', // Levels 20-24: Neon Pink/Blue
+  'linear-gradient(90deg, #00d2ff, #3a7bd5)', // Levels 25-29: Cyan/Light Blue
+  'linear-gradient(90deg, #f2709c, #ff9472)', // Levels 30-34: Coral/Salmon
+  'linear-gradient(90deg, #c31432, #240b36)', // Levels 35-39: Witching Hour (Dark Red/Purple)
+  'linear-gradient(90deg, #FFD700, #FDB931)', // Levels 40-44: Pure Gold
+  'linear-gradient(90deg, #E0E0E0, #BDBDBD)', // Levels 45-49: Silver
+  'linear-gradient(90deg, #B24592, #F15F79)', // Levels 50-54: Grapefruit
+  'linear-gradient(90deg, #00F260, #0575E6)', // Levels 55-59: Emerald/Blue
+  'linear-gradient(90deg, #ff9966, #ff5e62)', // Levels 60-64: Sunset
+  'linear-gradient(90deg, #43cea2, #185a9d)', // Levels 65-69: Seafoam
+  'linear-gradient(90deg, #4568DC, #B06AB3)', // Levels 70-74: Soft Purple/Blue
+  'linear-gradient(90deg, #3a1c71, #d76d77)', // Levels 75-79: Dusk
+  'linear-gradient(90deg, #c21500, #ffc500)', // Levels 80-84: Fire
+  'linear-gradient(90deg, #00c6ff, #0072ff)', // Levels 85-89: Electric Blue
+  'linear-gradient(90deg, #1D976C, #93F9B9)', // Levels 90-94: Forest
+  'linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045)', // Levels 95+: Instagramish
 ];
 
 
 // --- SOUND & CELEBRATION LOGIC ---
 function playTaskCompleteSound() {
-  // CHANGED! - Swapped 'success.mp3' for 'plink.mp3'
-  const soundUrl = chrome.runtime.getURL('assets/plink.mp3');
+  const soundUrl = chrome.runtime.getURL('assets/plinker.mp3');
   const audio = new Audio(soundUrl);
   audio.volume = 0.1;
   audio.play().catch(e => console.error("Error playing task sound:", e));
 }
 
-// CHANGED! - Added an 'isMilestone' parameter to select the correct level up sound
 function levelUpCelebration(isMilestone = false) {
-  // CHANGED! - Logic to choose between the milestone sound and the regular level up sound
   const soundFile = isMilestone ? 'assets/10-levels.mp3' : 'assets/level_up.mp3';
   const soundUrl = chrome.runtime.getURL(soundFile);
   const audio = new Audio(soundUrl);
   audio.volume = 0.03;
   audio.play().catch(e => console.error("Error playing level up sound:", e));
 
-  // The visual celebration effects remain the same
+  // The visual celebration effects
   progressBarContainer.classList.add('level-up-flash');
   setTimeout(() => {
     progressBarContainer.classList.remove('level-up-flash');
@@ -58,7 +62,7 @@ function levelUpCelebration(isMilestone = false) {
   }
 }
 
-// --- UI CREATION (NEW & IMPROVED DESIGN) ---
+// --- UI CREATION ---
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
@@ -145,7 +149,8 @@ document.body.appendChild(progressBarContainer);
 
 // --- HELPER FUNCTIONS ---
 function calculateXpForLevel(level) {
-  return BASE_XP_FOR_LEVEL_UP + ((level - 1) * XP_INCREASE_PER_LEVEL);
+  // Always returns 300 XP for the next level
+  return 300;
 }
 
 function updateUI(level, xp, xpForNextLevel) {
@@ -154,8 +159,8 @@ function updateUI(level, xp, xpForNextLevel) {
   const percentage = xpForNextLevel > 0 ? (xp / xpForNextLevel) * 100 : 0;
   barFill.style.width = `${percentage}%`;
 
-  // Logic to select color based on level
-  const tierIndex = Math.floor((level - 1) / 10);
+  // Logic to select color based on level (Every 5 levels now)
+  const tierIndex = Math.floor((level - 1) / 5);
   const color = colorTiers[tierIndex % colorTiers.length];
   barFill.style.background = color;
 }
@@ -168,9 +173,16 @@ chrome.storage.sync.get(['playerLevel', 'playerXP'], (data) => {
   updateUI(level, xp, xpForNextLevel);
 });
 
+// --- UPDATED EVENT LISTENER ---
 document.body.addEventListener('click', function(event) {
-  const button = event.target.closest('button[data-completed="false"]');
-  if (!button) return;
+  // 1. Check for the original sidebar task list button
+  const listButton = event.target.closest('button[data-completed="false"]');
+  
+  // 2. Check for the detailed view "Mark complete" button (using aria-label is safer than class names)
+  const detailButton = event.target.closest('button[aria-label="Mark complete"]');
+  
+  // If neither was clicked, stop the function
+  if (!listButton && !detailButton) return;
 
   playTaskCompleteSound();
   
@@ -178,7 +190,6 @@ document.body.addEventListener('click', function(event) {
     let level = data.playerLevel || 1;
     let xp = data.playerXP || 0;
     
-    // CHANGED! - Store the original level to check for milestones later
     const oldLevel = level;
     
     xp += XP_PER_TASK;
@@ -194,9 +205,9 @@ document.body.addEventListener('click', function(event) {
     
     if (leveledUp) {
       console.log(`LEVEL UP! Now Level ${level}`);
-      // CHANGED! - Check if a 10-level milestone was crossed (e.g., going from 9 to 10, or 19 to 21)
-      const isMilestone = Math.floor(oldLevel / 10) < Math.floor(level / 10);
-      levelUpCelebration(isMilestone); // Pass the result to the celebration function
+      // Milestone check changed to every 5 levels
+      const isMilestone = Math.floor(oldLevel / 5) < Math.floor(level / 5);
+      levelUpCelebration(isMilestone); 
     }
 
     chrome.storage.sync.set({ playerLevel: level, playerXP: xp }, () => {
