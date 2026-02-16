@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+<<<<<<< HEAD
   "name": "GCal Extension: Mode Switcher",
   "version": "2.2",
   "description": "Choose between Daily PB Chaser and RPG Level Up modes.",
@@ -16,12 +17,38 @@
     {
       "matches": ["https://calendar.google.com/calendar/*"],
       "js": ["level.js", "point.js"]
+=======
+  "name": "Calendar Level Up",
+  "version": "2.6",
+  "description": "Adds a level-up progress bar to Google Calendar.",
+  "permissions": [
+    "storage"
+  ],
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://calendar.google.com/*"],
+      "js": ["assets/confetti.js", "content.js"]
+>>>>>>> d2a90bf3869bab96775e59cef32b64eadebccbe9
     }
   ],
   "web_accessible_resources": [
     {
+<<<<<<< HEAD
       "resources": ["assets/*.mp3", "statistics.html"],
       "matches": ["<all_urls>"]
+=======
+      "resources": [
+        "assets/10-levels.mp3",
+        "assets/level_up.mp3",
+        "assets/plinker.mp3"
+      ],
+      "matches": ["https://calendar.google.com/*"]
+>>>>>>> d2a90bf3869bab96775e59cef32b64eadebccbe9
     }
   ]
 }
