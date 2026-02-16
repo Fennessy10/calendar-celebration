@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily PB Chaser Statistics</title>
+  <style>
+    body {
+      background-color: #202124;
+      color: #e8eaed;
+      font-family: 'Google Sans', Roboto, sans-serif;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { margin-bottom: 10px; }
+    .subtitle { color: #9aa0a6; margin-bottom: 40px; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 40px;
+    }
+    
+    .stat-card {
+      background: #2d2e31;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      background: linear-gradient(90deg, #11998e, #38ef7d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    .stat-value.gold {
+        background: linear-gradient(90deg, #FFD700, #FF512F);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .stat-label { font-size: 14px; color: #9aa0a6; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Chart Container */
+    .chart-container {
+      width: 100%;
+      max-width: 800px;
+      background: #2d2e31;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+      height: 400px;
+    }
+    
+    canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Danger Zone */
+    .danger-zone {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #3c4043;
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+    }
+    
+    .reset-all-btn {
+      background-color: transparent;
+      color: #e35b5b;
+      border: 1px solid #e35b5b;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .reset-all-btn:hover {
+      background-color: rgba(227, 91, 91, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Performance Statistics</h1>
+  <div class="subtitle" id="currentDate"></div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value gold" id="allTimePB">0</div>
+      <div class="stat-label">All Time Best</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="monthlyPB">0</div>
+      <div class="stat-label">Monthly Best</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="totalDays">0</div>
+      <div class="stat-label">Days Tracked</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="historyChart"></canvas>
+  </div>
+
+  <div class="danger-zone">
+    <button class="reset-all-btn" id="resetAllBtn">⚠️ Delete All History & Reset Data</button>
+  </div>
+
+  <script src="statistics.js"></script>
+</body>
+</html>

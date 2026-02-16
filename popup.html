@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 220px;
+      background: #202124;
+      color: #e8eaed;
+      font-family: 'Google Sans', Roboto, sans-serif;
+      padding: 15px;
+    }
+    h3 { margin-top: 0; text-align: center; font-weight: normal; font-size: 16px; margin-bottom: 15px;}
+    .option {
+      background: #2d2e31;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .option:hover { background: #3c4043; }
+    
+    /* Active State PB */
+    .option.active {
+      border-color: #38ef7d;
+      background: #3c4043;
+    }
+    
+    /* Active State RPG */
+    .option.active.rpg {
+      border-color: #a855f7; /* Purple */
+    }
+
+    .circle {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid #5f6368;
+      flex-shrink: 0;
+    }
+    
+    .active .circle {
+      background: #38ef7d;
+      border-color: #38ef7d;
+    }
+    .active.rpg .circle {
+      background: #a855f7;
+      border-color: #a855f7;
+    }
+    
+    .text-container {
+        display: flex;
+        flex-direction: column;
+    }
+    .title { font-size: 14px; font-weight: bold; }
+    .desc { font-size: 11px; color: #9aa0a6; margin-top: 2px;}
+  </style>
+</head>
+<body>
+  <h3>Extension Mode</h3>
+  
+  <div class="option" id="btn-pb">
+    <div class="circle"></div>
+    <div class="text-container">
+      <div class="title">Daily PB Chaser</div>
+      <div class="desc">Reset daily, chase high scores.</div>
+    </div>
+  </div>
+
+  <div class="option" id="btn-rpg">
+    <div class="circle"></div>
+    <div class="text-container">
+      <div class="title">RPG Level Up</div>
+      <div class="desc">Permanent levels, unlock colors.</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
