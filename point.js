@@ -10,9 +10,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
     // --- GRADIENTS ---
     const PROGRESS_GRADIENT = 'linear-gradient(90deg, #11998e, #38ef7d)'; // Green/Teal (Standard)
-    const MONTHLY_RECORD_GRADIENT = 'linear-gradient(90deg, #FF512F, #DD2476)'; // Red/Pink (Monthly Record)
-    const MATCH_GRADIENT = 'linear-gradient(90deg, #FF8008, #FFC837)'; // Orange (Matching a PB)
-    const RAINBOW_GRADIENT = 'linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3)'; // Rainbow (All Time Record)
+    const MATCH_GRADIENT = 'linear-gradient(90deg, #FF8008, #FFC837)'; // Orange (Matching Goal)
+    const SURPASS_GRADIENT = 'linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3)'; // Rainbow (Reached/Surpassing Goal)
 
     // --- SOUNDS ---
     function playSound(type) {
@@ -77,7 +76,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       
       /* Rainbow Text Effect */
       .rainbow-text {
-        background: ${RAINBOW_GRADIENT};
+        background: ${SURPASS_GRADIENT};
         background-size: 400% 400%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -182,9 +181,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       e.stopPropagation(); 
       if (confirm("Reset daily points to 0?")) {
         chrome.storage.sync.set({ dailyScore: 0 }, () => {
-          chrome.storage.sync.get(['personalBest', 'monthlyPersonalBest'], (data) => {
-            // Updated default monthly PB to 15 here
-            updateUI(0, data.monthlyPersonalBest || 15, data.personalBest || 5);
+          chrome.storage.sync.get(['customGoal'], (data) => {
+            updateUI(0, data.customGoal || 15);
           });
         });
       }
@@ -196,7 +194,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
     const targetDisplay = document.createElement('div');
     targetDisplay.className = 'pb-target-area';
-    targetDisplay.innerText = 'Target: 5';
+    targetDisplay.innerText = 'Target: 15';
 
     const barBg = document.createElement('div');
     barBg.className = 'pb-bar-bg';
@@ -217,14 +215,13 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       if (now.getHours() < 3) {
         now.setDate(now.getDate() - 1);
       }
-      return now.toISOString().split('T')[0];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
 
-    function getBusinessMonthString() {
-      return getBusinessDateString().substring(0, 7);
-    }
-
-    function updateUI(dailyScore, monthlyPB, allTimePB) {
+    function updateUI(dailyScore, customGoal) {
       scoreDisplay.innerText = `${dailyScore} pts`;
       
       // Reset styles
@@ -232,50 +229,25 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       targetDisplay.className = 'pb-target-area';
       scoreDisplay.style.color = '#e8eaed';
       targetDisplay.style.color = '#bdc1c6';
-      barFill.className = 'pb-bar-fill'; // removes rainbow anim if present
+      barFill.className = 'pb-bar-fill';
       
-      let currentTarget = monthlyPB;
-      let label = `Monthly Best: ${monthlyPB}`;
+      let label = `Goal: ${customGoal}`;
       let barColor = PROGRESS_GRADIENT;
 
-      // --- LOGIC TREE ---
+      // --- LOGIC TREE (Strictly tracking Custom Goal) ---
 
-      // 1. Surpassed All Time (Rainbow Mode)
-      if (dailyScore > allTimePB && allTimePB > 0) {
-          currentTarget = allTimePB;
-          label = `LEGENDARY! NEW RECORD: ${allTimePB}`;
-          barColor = RAINBOW_GRADIENT;
+      // 1. Reached or Surpassed Custom Goal
+      if (dailyScore >= customGoal && customGoal > 0) {
+          label = dailyScore > customGoal ? `Goal Surpassed!` : `Goal Reached! (${customGoal})`;
+          barColor = SURPASS_GRADIENT;
           
-          // Apply Rainbow Styles
           scoreDisplay.classList.add('rainbow-text');
           targetDisplay.classList.add('rainbow-text');
           barFill.classList.add('rainbow-bar');
       }
-      // 2. Matched All Time (Orange)
-      else if (dailyScore === allTimePB && allTimePB > 0) {
-          currentTarget = allTimePB;
-          label = `All Time Best Reached! (${allTimePB})`;
-          barColor = MATCH_GRADIENT;
-          scoreDisplay.style.color = '#FFC837'; // Gold-ish
-      }
-      // 3. Surpassed Monthly (Red/Pink - "What it does now")
-      else if (dailyScore > monthlyPB) {
-          // Chasing All Time now
-          currentTarget = allTimePB;
-          label = `Chasing All Time: ${allTimePB}`;
-          barColor = MONTHLY_RECORD_GRADIENT;
-      }
-      // 4. Matched Monthly (Orange)
-      else if (dailyScore === monthlyPB && monthlyPB > 0) {
-          currentTarget = monthlyPB;
-          label = `Monthly Best Reached! (${monthlyPB})`;
-          barColor = MATCH_GRADIENT;
-          scoreDisplay.style.color = '#FFC837';
-      }
-      // 5. Normal Chase (Green)
+      // 2. Normal Chase (Green)
       else {
-          currentTarget = monthlyPB;
-          label = `Monthly Best: ${monthlyPB}`;
+          label = `Goal: ${customGoal}`;
           barColor = PROGRESS_GRADIENT;
       }
 
@@ -283,8 +255,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       targetDisplay.innerText = label;
       
       let percentage = 0;
-      if (currentTarget > 0) {
-        percentage = (dailyScore / currentTarget) * 100;
+      if (customGoal > 0) {
+        percentage = (dailyScore / customGoal) * 100;
       }
       const displayWidth = Math.min(percentage, 100);
       
@@ -293,18 +265,14 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     }
 
     function loadAndResetIfNeeded() {
-      chrome.storage.sync.get(['dailyScore', 'personalBest', 'monthlyPersonalBest', 'lastActiveDate', 'history'], (data) => {
+      chrome.storage.sync.get(['dailyScore', 'customGoal', 'lastActiveDate', 'history'], (data) => {
         const todayBusinessDate = getBusinessDateString();
-        const todayMonth = getBusinessMonthString();
         
         let score = data.dailyScore || 0;
-        let allTimePB = data.personalBest || 5; 
-        // Updated default monthly PB to 15 here
-        let monthlyPB = data.monthlyPersonalBest || 15;
+        let currentGoal = data.customGoal || 15;
         let history = data.history || [];
         
         const lastDate = data.lastActiveDate || todayBusinessDate;
-        const lastMonth = lastDate.substring(0, 7);
 
         // 1. Daily Reset (3AM rule)
         if (lastDate !== todayBusinessDate) {
@@ -315,21 +283,14 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
           score = 0;
         }
 
-        // 2. Monthly Reset
-        if (lastMonth !== todayMonth) {
-            // Updated default monthly PB to 15 here
-            monthlyPB = Math.max(score, 15);
-        }
-
         chrome.storage.sync.set({
           dailyScore: score,
-          personalBest: allTimePB,
-          monthlyPersonalBest: monthlyPB,
+          customGoal: currentGoal,
           lastActiveDate: todayBusinessDate,
           history: history
         });
 
-        updateUI(score, monthlyPB, allTimePB);
+        updateUI(score, currentGoal);
       });
     }
 
@@ -394,53 +355,44 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
       playSound('success');
 
-      chrome.storage.sync.get(['dailyScore', 'personalBest', 'monthlyPersonalBest', 'lastActiveDate'], (data) => {
+      chrome.storage.sync.get(['dailyScore', 'personalBest', 'customGoal', 'lastActiveDate'], (data) => {
         let score = data.dailyScore || 0;
-        let allTimePB = data.personalBest || 5;
-        // Updated default monthly PB to 15 here
-        let monthlyPB = data.monthlyPersonalBest || 15;
+        let allTimePB = data.personalBest || 5; // Still tracking All Time PB silently for stats page
+        let currentGoal = data.customGoal || 15;
         
         // Safety check date
         const todayBusinessDate = getBusinessDateString();
         if (data.lastActiveDate !== todayBusinessDate) score = 0; 
-
-        // Determine State BEFORE Update (for sound triggering logic if needed, 
-        // though here we mostly care about the resulting state)
-        // Actually, simpler to just check the result:
         
+        const oldScore = score;
         score += pointsEarned;
 
-        // --- CHECK MILESTONES & SOUNDS ---
-        
-        // Case 1: Surpass All Time
+        // Ensure All-Time PB is updated in the background
         if (score > allTimePB) {
             allTimePB = score;
-            monthlyPB = score; // Monthly must track max if we beat all time
-            playSound('major'); // Play "10-levels"
-            triggerConfetti();
         }
-        // Case 2: Match All Time
-        else if (score === allTimePB) {
-            playSound('levelup');
-        }
-        // Case 3: Surpass Monthly (but not All Time)
-        else if (score > monthlyPB) {
-            monthlyPB = score;
-            playSound('levelup'); 
-        }
-        // Case 4: Match Monthly (but not All Time)
-        else if (score === monthlyPB) {
-            playSound('levelup');
+
+        // --- CHECK MILESTONES & SOUNDS (Based ONLY on Custom Goal) ---
+        
+        if (score >= currentGoal && currentGoal > 0) {
+            if (oldScore < currentGoal) {
+                // First time reaching or surpassing the goal today
+                playSound('major'); // Play "10-levels"
+                triggerConfetti();
+            } else {
+                // Already reached the goal previously today, play normal level_up
+                playSound('levelup');
+            }
         }
 
         // Save
         chrome.storage.sync.set({
           dailyScore: score,
-          personalBest: allTimePB,
-          monthlyPersonalBest: monthlyPB,
+          personalBest: allTimePB, // Save silently
+          customGoal: currentGoal,
           lastActiveDate: todayBusinessDate
         }, () => {
-          updateUI(score, monthlyPB, allTimePB);
+          updateUI(score, currentGoal);
         });
       });
 

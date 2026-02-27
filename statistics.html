@@ -50,7 +50,105 @@
     
     .stat-label { font-size: 14px; color: #9aa0a6; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Chart Container */
+    /* Goal Settings Area */
+    .goal-settings {
+      background: #2d2e31;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    
+    .goal-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .goal-input-group label {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .goal-input {
+      background: #202124;
+      border: 1px solid #5f6368;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      width: 80px;
+      outline: none;
+    }
+    
+    .goal-input:focus {
+      border-color: #8ab4f8;
+    }
+
+    .save-goal-btn {
+      background: #8ab4f8;
+      color: #202124;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .save-goal-btn:hover {
+      background: #aecbfa;
+    }
+
+    /* Chart Area */
+    .chart-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 15px;
+    }
+    
+    .chart-controls h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .chart-filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: #202124;
+      color: #9aa0a6;
+      border: 1px solid #5f6368;
+      padding: 6px 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: #3c4043;
+      color: #e8eaed;
+    }
+
+    .filter-btn.active {
+      background: #38ef7d;
+      color: #202124;
+      border-color: #38ef7d;
+      font-weight: bold;
+    }
+
     .chart-container {
       width: 100%;
       max-width: 800px;
@@ -60,6 +158,7 @@
       border: 1px solid rgba(255,255,255,0.05);
       position: relative;
       height: 400px;
+      box-sizing: border-box;
     }
     
     canvas {
@@ -104,12 +203,30 @@
       <div class="stat-label">All Time Best</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="monthlyPB">0</div>
-      <div class="stat-label">Monthly Best</div>
+      <div class="stat-value" id="currentScore">0</div>
+      <div class="stat-label">Current Score</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="totalDays">0</div>
       <div class="stat-label">Days Tracked</div>
+    </div>
+  </div>
+
+  <div class="goal-settings">
+    <div class="goal-input-group">
+      <label for="goalInput">🎯 Daily Target Goal:</label>
+      <input type="number" id="goalInput" class="goal-input" value="15" min="1">
+    </div>
+    <button id="saveGoalBtn" class="save-goal-btn">Save Goal</button>
+  </div>
+
+  <div class="chart-controls">
+    <h2>Point History</h2>
+    <div class="chart-filters">
+      <button class="filter-btn active" data-range="all">All-Time</button>
+      <button class="filter-btn" data-range="year">Year</button>
+      <button class="filter-btn" data-range="month">Month</button>
+      <button class="filter-btn" data-range="week">Week</button>
     </div>
   </div>
 
