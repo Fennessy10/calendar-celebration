@@ -106,6 +106,96 @@
       background: #aecbfa;
     }
 
+    /* Calendar Area */
+    .calendar-wrapper {
+      width: 100%;
+      max-width: 800px;
+      background: #2d2e31;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .calendar-header h2 { margin: 0; font-size: 20px; }
+    .calendar-header button {
+      background: #3c4043;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .calendar-header button:hover { background: #5f6368; }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      color: #9aa0a6;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .calendar-day {
+      background: #202124;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 2px solid transparent;
+      box-sizing: border-box;
+    }
+    .calendar-day.empty { background: transparent; border: none; }
+    .calendar-day .date-num {
+      position: absolute;
+      top: 5px;
+      left: 8px;
+      font-size: 12px;
+      color: #9aa0a6;
+      font-weight: bold;
+    }
+    .calendar-day.met {
+      border-color: #38ef7d;
+      background: rgba(56, 239, 125, 0.1);
+    }
+    .calendar-day.met::after {
+      content: '✓';
+      color: #38ef7d;
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .calendar-day.missed .score {
+      color: #e8eaed;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .calendar-day.missed .goal-txt {
+      font-size: 11px;
+      color: #9aa0a6;
+    }
+    .calendar-day.today {
+      border: 2px dashed #8ab4f8;
+    }
+
     /* Chart Area */
     .chart-controls {
       display: flex;
@@ -218,6 +308,17 @@
       <input type="number" id="goalInput" class="goal-input" value="15" min="1">
     </div>
     <button id="saveGoalBtn" class="save-goal-btn">Save Goal</button>
+  </div>
+
+  <div class="calendar-wrapper">
+    <div class="calendar-header">
+      <button id="prevMonthBtn">&lt; Prev</button>
+      <h2 id="calendarMonthYear">Month Year</h2>
+      <button id="nextMonthBtn">Next &gt;</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- Generated via JS -->
+    </div>
   </div>
 
   <div class="chart-controls">

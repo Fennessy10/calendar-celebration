@@ -278,7 +278,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
         if (lastDate !== todayBusinessDate) {
           const exists = history.find(h => h.date === lastDate);
           if (!exists && score > 0) {
-            history.push({ date: lastDate, score: score });
+            // CRITICAL ADDITION: Save the goal that was active that day into history!
+            history.push({ date: lastDate, score: score, goal: currentGoal });
           }
           score = 0;
         }
