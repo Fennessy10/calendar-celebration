@@ -243,7 +243,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
         // Daily Reset (3AM rule)
         if (lastDate !== todayBusinessDate) {
           const exists = history.find(h => h.date === lastDate);
-          if (!exists && score > 0) {
+          // SAVE 0s - Removed the && score > 0 check so 0 days are tracked properly
+          if (!exists) {
             history.push({ date: lastDate, score: score });
           }
           score = 0;
@@ -357,8 +358,9 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
     }, true);
 
+    // --- INIT ---
     loadAndResetIfNeeded();
     window.addEventListener('focus', loadAndResetIfNeeded);
 
-  }
+  } // End PB Mode Check
 });
