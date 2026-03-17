@@ -1,11 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GCal Extension: Mode Switcher",
-<<<<<<< HEAD
   "version": "3",
-=======
-  "version": "3",
->>>>>>> 3c834f456c94f8fa7b9360ac63f846a4de34eea3
   "description": "Choose between Daily PB Chaser and RPG Level Up modes.",
   "permissions": [
     "storage"
