@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
   <title>Daily PB Chaser Statistics</title>
   <style>
     body {
@@ -26,6 +25,15 @@
       margin-bottom: 40px;
     }
     
+    .averages-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 40px;
+    }
+    
     .stat-card {
       background: #2d2e31;
       padding: 20px;
@@ -33,6 +41,15 @@
       text-align: center;
       border: 1px solid rgba(255,255,255,0.05);
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .averages-grid .stat-card {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     
     .stat-value {
@@ -43,6 +60,14 @@
       -webkit-text-fill-color: transparent;
       margin-bottom: 5px;
     }
+    
+    /* Override for averages to rely on the dynamic tier color instead of base gradient */
+    .averages-grid .stat-value {
+      font-size: 26px;
+      background: none;
+      -webkit-text-fill-color: currentcolor;
+    }
+
     .stat-value.gold {
         background: linear-gradient(90deg, #FFD700, #FF512F);
         -webkit-background-clip: text;
@@ -50,61 +75,18 @@
     }
     
     .stat-label { font-size: 14px; color: #9aa0a6; text-transform: uppercase; letter-spacing: 1px; }
-
-    /* Goal Settings Area */
-    .goal-settings {
-      background: #2d2e31;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.05);
-      width: 100%;
-      max-width: 800px;
-      margin-bottom: 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-sizing: border-box;
+    
+    .averages-grid .stat-label { 
+        font-size: 12px; 
+        margin-bottom: 6px;
     }
     
-    .goal-input-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .goal-input-group label {
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .goal-input {
-      background: #202124;
-      border: 1px solid #5f6368;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 16px;
-      width: 80px;
-      outline: none;
-    }
-    
-    .goal-input:focus {
-      border-color: #8ab4f8;
-    }
-
-    .save-goal-btn {
-      background: #8ab4f8;
-      color: #202124;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    .save-goal-btn:hover {
-      background: #aecbfa;
+    .averages-grid .tier-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        margin-top: 4px;
     }
 
     /* Calendar Area */
@@ -154,7 +136,7 @@
       background: #202124;
       border-radius: 8px;
       padding: 10px;
-      min-height: 70px;
+      min-height: 75px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -164,6 +146,7 @@
       box-sizing: border-box;
     }
     .calendar-day.empty { background: transparent; border: none; }
+    
     .calendar-day .date-num {
       position: absolute;
       top: 5px;
@@ -171,30 +154,61 @@
       font-size: 12px;
       color: #9aa0a6;
       font-weight: bold;
+      z-index: 2;
     }
-    .calendar-day.met {
-      border-color: #38ef7d;
-      background: rgba(56, 239, 125, 0.1);
-    }
-    .calendar-day.met::after {
-      content: '\2713'; /* Safe Unicode for checkmark */
-      color: #38ef7d;
-      font-size: 28px;
+    .calendar-day .score {
+      font-size: 22px;
       font-weight: bold;
-      margin-top: 5px;
+      margin-top: 8px;
+      color: #ffffff !important; /* Pure white for high contrast */
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6); /* Double layered shadow for maximum legibility on any background */
+      z-index: 2;
     }
-    .calendar-day.missed .score {
-      color: #e8eaed;
-      font-size: 18px;
-      font-weight: bold;
-      margin-top: 10px;
+
+    /* GitHub-style Intensity Colors */
+    .tier-pathetic { 
+        background-color: #0e4429; /* Very dark green */
+        border-color: #0e4429;
     }
-    .calendar-day.missed .goal-txt {
-      font-size: 11px;
-      color: #9aa0a6;
+    .tier-pathetic .tier-label, .tier-pathetic .stat-value { color: #8ab4f8; opacity: 0.9; }
+    .tier-pathetic .date-num { color: #9aa0a6; }
+    
+    .tier-underwhelming { 
+        background-color: #006d32; /* Dark green */
+        border-color: #006d32;
     }
+    .tier-underwhelming .tier-label, .tier-underwhelming .stat-value { color: #e8eaed; }
+    .tier-underwhelming .date-num { color: #bdc1c6; }
+
+    .tier-solid { 
+        background-color: #26a641; /* Medium green */
+        border-color: #26a641;
+    }
+    .tier-solid .tier-label, .tier-solid .stat-value { color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .tier-solid .date-num { color: #e8eaed; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    
+    .tier-masterful { 
+        background-color: #39d353; /* Bright green */
+        border-color: #39d353;
+    }
+    .tier-masterful .tier-label, .tier-masterful .stat-value { color: #0a2a1a; text-shadow: none; }
+    .tier-masterful .date-num { color: #0a2a1a; font-weight: 800; }
+    
+    /* God-like Extra Bright Green Effect */
+    .tier-god { 
+        background-color: #6bff82; /* Glowing neon green */
+        border-color: #6bff82;
+        box-shadow: 0 0 12px rgba(107, 255, 130, 0.4);
+    }
+    .tier-god .stat-value { color: #0a2a1a; font-weight: 900; }
+    .tier-god .tier-label { color: #0a2a1a; font-weight: 900; }
+    .tier-god .date-num { color: #0a2a1a; font-weight: 800; }
+
     .calendar-day.today {
-      border: 2px dashed #8ab4f8;
+      box-shadow: inset 0 0 0 3px #8ab4f8; /* Soft blue UI accent for today */
+    }
+    .calendar-day.today.tier-god {
+      box-shadow: inset 0 0 0 3px #8ab4f8, 0 0 12px rgba(107, 255, 130, 0.4);
     }
 
     /* Chart Area */
@@ -207,87 +221,68 @@
       margin-bottom: 15px;
     }
     
-    .chart-controls h2 {
-      margin: 0;
-      font-size: 18px;
-    }
+    .chart-controls h2 { margin: 0; font-size: 18px; }
 
-    .chart-filters {
-      display: flex;
-      gap: 8px;
-    }
+    .chart-filters { display: flex; gap: 8px; }
 
     .filter-btn {
-      background: #202124;
-      color: #9aa0a6;
-      border: 1px solid #5f6368;
-      padding: 6px 14px;
-      border-radius: 16px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
+      background: #202124; color: #9aa0a6; border: 1px solid #5f6368;
+      padding: 6px 14px; border-radius: 16px; cursor: pointer;
+      font-size: 12px; transition: all 0.2s;
     }
 
-    .filter-btn:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
-
-    .filter-btn.active {
-      background: #38ef7d;
-      color: #202124;
-      border-color: #38ef7d;
-      font-weight: bold;
-    }
+    .filter-btn:hover { background: #3c4043; color: #e8eaed; }
+    .filter-btn.active { background: #38ef7d; color: #202124; border-color: #38ef7d; font-weight: bold; }
 
     .chart-container {
-      width: 100%;
-      max-width: 800px;
-      background: #2d2e31;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.05);
-      position: relative;
-      height: 400px;
-      box-sizing: border-box;
+      width: 100%; max-width: 800px; background: #2d2e31; padding: 20px;
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+      position: relative; height: 400px; box-sizing: border-box;
+      margin-bottom: 40px;
     }
-    
-    canvas {
-        width: 100%;
-        height: 100%;
-    }
+    canvas { width: 100%; height: 100%; }
 
     /* Danger Zone */
     .danger-zone {
-      margin-top: 60px;
-      padding-top: 20px;
-      border-top: 1px solid #3c4043;
-      width: 100%;
-      max-width: 800px;
-      text-align: center;
+      margin-top: 60px; padding-top: 20px; border-top: 1px solid #3c4043;
+      width: 100%; max-width: 800px; text-align: center;
     }
-    
     .reset-all-btn {
-      background-color: transparent;
-      color: #e35b5b;
-      border: 1px solid #e35b5b;
-      padding: 10px 20px;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
+      background-color: transparent; color: #e35b5b; border: 1px solid #e35b5b;
+      padding: 10px 20px; border-radius: 4px; font-family: inherit;
+      font-size: 14px; cursor: pointer; transition: all 0.2s;
     }
-    
-    .reset-all-btn:hover {
-      background-color: rgba(227, 91, 91, 0.1);
-    }
+    .reset-all-btn:hover { background-color: rgba(227, 91, 91, 0.1); }
   </style>
 </head>
 <body>
   <h1>Performance Statistics</h1>
   <div class="subtitle" id="currentDate"></div>
 
+  <div class="averages-grid">
+    <div class="stat-card" id="cardAvgWeek">
+      <div class="stat-value" id="avgWeek">0.0</div>
+      <div class="stat-label">7-Day Avg</div>
+      <div class="tier-label" id="tierAvgWeek">Pathetic</div>
+    </div>
+    <div class="stat-card" id="cardAvgMonth">
+      <div class="stat-value" id="avgMonth">0.0</div>
+      <div class="stat-label">30-Day Avg</div>
+      <div class="tier-label" id="tierAvgMonth">Pathetic</div>
+    </div>
+  </div>
+
+  <div class="calendar-wrapper">
+    <div class="calendar-header">
+      <button id="prevMonthBtn">&lt; Prev</button>
+      <h2 id="calendarMonthYear">Month Year</h2>
+      <button id="nextMonthBtn">Next &gt;</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- Generated via JS -->
+    </div>
+  </div>
+  
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-value gold" id="allTimePB">0</div>
@@ -300,25 +295,6 @@
     <div class="stat-card">
       <div class="stat-value" id="totalDays">0</div>
       <div class="stat-label">Days Tracked</div>
-    </div>
-  </div>
-
-  <div class="goal-settings">
-    <div class="goal-input-group">
-      <label for="goalInput">🎯 Daily Target Goal:</label>
-      <input type="number" id="goalInput" class="goal-input" value="15" min="1">
-    </div>
-    <button id="saveGoalBtn" class="save-goal-btn">Save Goal</button>
-  </div>
-
-  <div class="calendar-wrapper">
-    <div class="calendar-header">
-      <button id="prevMonthBtn">&lt; Prev</button>
-      <h2 id="calendarMonthYear">Month Year</h2>
-      <button id="nextMonthBtn">Next &gt;</button>
-    </div>
-    <div class="calendar-grid" id="calendarGrid">
-      <!-- Generated via JS -->
     </div>
   </div>
 

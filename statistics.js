@@ -1,5 +1,4 @@
 let globalGraphData = [];
-let globalCurrentGoal = 15;
 let calendarDate = new Date();
 
 // Helper to get local date string matching our extension logic
@@ -10,25 +9,73 @@ function getLocalBusinessDateString(dateObj) {
     return `${year}-${month}-${day}`;
 }
 
+// Centralized rank calculation (Shared by Calendar and Averages)
+function getTierInfo(score) {
+    if (score >= 50) return { class: 'tier-god', name: 'God-Like' };
+    if (score >= 40) return { class: 'tier-masterful', name: 'Masterful' };
+    if (score >= 30) return { class: 'tier-solid', name: 'Solid' };
+    if (score >= 20) return { class: 'tier-underwhelming', name: 'Underwhelming' };
+    return { class: 'tier-pathetic', name: 'Pathetic' };
+}
+
+// Calculate averages based on date ranges and update UI
+function calculateAverages(data) {
+    const now = new Date();
+    const msPerDay = 24 * 60 * 60 * 1000;
+    
+    let stats = {
+        week: { total: 0, count: 0 },
+        month: { total: 0, count: 0 }
+    };
+
+    data.forEach(point => {
+        const diffDays = (now - point.rawDate) / msPerDay;
+        
+        if (diffDays <= 7) {
+            stats.week.total += point.score;
+            stats.week.count++;
+        }
+        if (diffDays <= 30) {
+            stats.month.total += point.score;
+            stats.month.count++;
+        }
+    });
+
+    const avgWeek = stats.week.count > 0 ? (stats.week.total / stats.week.count) : 0;
+    const avgMonth = stats.month.count > 0 ? (stats.month.total / stats.month.count) : 0;
+
+    updateAverageCard('cardAvgWeek', 'avgWeek', 'tierAvgWeek', avgWeek);
+    updateAverageCard('cardAvgMonth', 'avgMonth', 'tierAvgMonth', avgMonth);
+}
+
+function updateAverageCard(cardId, valId, tierId, score) {
+    const card = document.getElementById(cardId);
+    const valEl = document.getElementById(valId);
+    const tierEl = document.getElementById(tierId);
+    
+    const tierInfo = getTierInfo(score);
+    
+    valEl.innerText = score.toFixed(1);
+    tierEl.innerText = tierInfo.name;
+    
+    // Apply the tier class to the card dynamically
+    card.className = 'stat-card ' + tierInfo.class;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Set date
     document.getElementById('currentDate').innerText = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     // Load Data
-    chrome.storage.sync.get(['dailyScore', 'personalBest', 'customGoal', 'history', 'lastActiveDate'], (data) => {
+    chrome.storage.sync.get(['dailyScore', 'personalBest', 'history', 'lastActiveDate'], (data) => {
         const history = data.history || [];
         const dailyScore = data.dailyScore || 0;
         const lastDate = data.lastActiveDate;
-        
-        globalCurrentGoal = data.customGoal || 15;
 
-        // Populate Cards
+        // Populate Main Cards
         document.getElementById('allTimePB').innerText = data.personalBest || 0;
         document.getElementById('currentScore').innerText = dailyScore;
         document.getElementById('totalDays').innerText = history.length + (dailyScore > 0 ? 1 : 0);
-
-        // Populate Goal Input
-        document.getElementById('goalInput').value = globalCurrentGoal;
 
         // Prepare Graph Data
         globalGraphData = [...history];
@@ -39,13 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
                  globalGraphData.push({ 
                      date: 'Today', 
                      score: dailyScore, 
-                     goal: globalCurrentGoal, // Current goal for today
                      rawDate: new Date() 
                 });
              }
         } else {
             globalGraphData[globalGraphData.length - 1].score = dailyScore;
-            globalGraphData[globalGraphData.length - 1].goal = globalCurrentGoal;
             globalGraphData[globalGraphData.length - 1].date = 'Today';
             globalGraphData[globalGraphData.length - 1].rawDate = new Date();
         }
@@ -56,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.rawDate = new Date(item.date);
             }
         });
+        
+        // Calculate and display averages
+        calculateAverages(globalGraphData);
 
         // Initial Renders
         renderCalendar();
@@ -79,35 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             renderGraph(e.target.dataset.range);
-        });
-    });
-
-    // --- GOAL SETTING LOGIC ---
-    document.getElementById('saveGoalBtn').addEventListener('click', () => {
-        const goalInput = document.getElementById('goalInput');
-        let newGoal = parseInt(goalInput.value, 10);
-        
-        if (isNaN(newGoal) || newGoal < 1) {
-            newGoal = 15; // Fallback
-            goalInput.value = newGoal;
-        }
-
-        chrome.storage.sync.set({ customGoal: newGoal }, () => {
-            globalCurrentGoal = newGoal;
-            
-            // Immediately update the visual for 'Today' in calendar & graphs
-            const todayItem = globalGraphData.find(d => d.date === 'Today');
-            if(todayItem) todayItem.goal = newGoal;
-
-            renderCalendar(); // Re-render calendar so today's cell updates
-
-            const btn = document.getElementById('saveGoalBtn');
-            btn.innerText = "Saved!";
-            btn.style.background = "#38ef7d";
-            setTimeout(() => {
-                btn.innerText = "Save Goal";
-                btn.style.background = "#8ab4f8";
-            }, 2000);
         });
     });
 
@@ -163,7 +182,6 @@ function renderCalendar() {
         grid.appendChild(el);
     }
 
-    // Standard business date check for "Today" identification
     const now = new Date();
     if (now.getHours() < 3) now.setDate(now.getDate() - 1);
     const localNowStr = getLocalBusinessDateString(now);
@@ -172,7 +190,6 @@ function renderCalendar() {
         const el = document.createElement('div');
         el.className = 'calendar-day';
         
-        // Date formatting to match history structure
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         
         const dateNum = document.createElement('div');
@@ -186,27 +203,16 @@ function renderCalendar() {
         );
 
         if (dayData) {
-            // Use the historically saved goal, fallback to current goal if missing
-            const historicalGoal = dayData.goal || globalCurrentGoal;
+            const score = dayData.score;
+            const tierInfo = getTierInfo(score);
 
-            if (dayData.score >= historicalGoal) {
-                el.classList.add('met');
-                el.title = `Score: ${dayData.score} / Goal: ${historicalGoal}`;
-            } else {
-                el.classList.add('missed');
-                el.title = `Score: ${dayData.score} / Goal: ${historicalGoal}`;
-                
-                const scoreEl = document.createElement('div');
-                scoreEl.className = 'score';
-                scoreEl.innerText = dayData.score;
-                
-                const goalEl = document.createElement('div');
-                goalEl.className = 'goal-txt';
-                goalEl.innerText = `/${historicalGoal}`;
-                
-                el.appendChild(scoreEl);
-                el.appendChild(goalEl);
-            }
+            el.classList.add(tierInfo.class);
+
+            const scoreEl = document.createElement('div');
+            scoreEl.className = 'score';
+            scoreEl.innerText = score;
+            
+            el.appendChild(scoreEl);
         }
 
         // Highlight current active day
