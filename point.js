@@ -219,7 +219,7 @@ function updatePBUI(dailyScore) {
       targetDisplay.style.color = '#bdc1c6';
   }
   
-  // Calculate Bar Width (Maxes out at 50)
+  // Calculate Bar Width (Maxes out at 70)
   const percentage = Math.min((dailyScore / PB_CONFIG.MAX_BAR_SCORE) * 100, 100);
   barFill.style.width = `${percentage}%`;
   barFill.style.backgroundColor = currentTier.color;
@@ -308,17 +308,20 @@ function handlePBTaskComplete(points) {
   });
 }
 
+// -----------------------------------------------------
+// HIGHLY ROBUST PROJECTION LOGIC 
+// Uses data-datekey to prevent missing completed tasks
+// -----------------------------------------------------
 function updateDailyProjections() {
   if (CURRENT_MODE !== 'pb') return;
 
   const now = new Date(); // Native midnight rollover
   
-  // Set up target arrays for Today, Tomorrow, and Day After Tomorrow
+  // 1. Setup target arrays for Today, Tomorrow, and Day After Tomorrow
   const datesInfo = [0, 1, 2].map(offset => {
     const d = new Date(now);
     d.setDate(d.getDate() + offset);
     
-    // Generate multiple text formats so we can robustly match against GCal's UI
     const mLong = d.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
     const mShort = d.toLocaleDateString('en-US', { month: 'short' }).toLowerCase();
     const dayNum = d.getDate();
@@ -332,10 +335,39 @@ function updateDailyProjections() {
       isToday: offset === 0,
       isTomorrow: offset === 1,
       uncompletedPoints: 0,
-      completedPoints: 0
+      completedPoints: 0,
+      targetH2: null
     };
   });
 
+  // 2. Discover Google Calendar's internal 'data-datekey' maps from the headers
+  const dateKeyMap = {};
+  const headers = document.querySelectorAll('h2');
+  
+  headers.forEach(h2 => {
+      const btn = h2.querySelector('button[data-datekey]');
+      const ariaLabel = h2.getAttribute('aria-label') || (btn ? btn.getAttribute('aria-label') : '');
+      if (!ariaLabel) return;
+      
+      const labelLower = ariaLabel.toLowerCase();
+      
+      // Find which of our 3 tracked days this header belongs to
+      const matchedDay = datesInfo.find(d => 
+        d.matchStrings.some(str => labelLower.includes(str)) ||
+        (d.isToday && labelLower.includes('today')) ||
+        (d.isTomorrow && labelLower.includes('tomorrow'))
+      );
+
+      if (matchedDay) {
+          matchedDay.targetH2 = h2; // Save reference for injecting the badge
+          if (btn) {
+              const key = btn.getAttribute('data-datekey');
+              dateKeyMap[key] = matchedDay.offset; // Map Google's internal ID to our day array offset
+          }
+      }
+  });
+
+  // 3. Parse DOM Task Elements
   const seenTasks = new Set();
   const taskChips = document.querySelectorAll('[data-eventid^="tasks_"]');
 
@@ -343,98 +375,84 @@ function updateDailyProjections() {
     const eventId = chip.getAttribute('data-eventid');
     if (seenTasks.has(eventId)) return;
 
-    const hiddenSpan = chip.querySelector('.XuJrye');
-    const hiddenText = hiddenSpan ? hiddenSpan.textContent.toLowerCase() : "";
     let targetDayInfo = null;
 
-    // Check 1: Using the parent gridcell accessibility labels
-    const gridcell = chip.closest('[role="gridcell"]');
-    if (gridcell) {
-      const labelId = gridcell.getAttribute('aria-labelledby');
-      if (labelId) {
-        const labelEl = document.getElementById(labelId);
-        if (labelEl) {
-            const labelText = labelEl.textContent.toLowerCase();
-            targetDayInfo = datesInfo.find(d => 
-              d.matchStrings.some(str => labelText.includes(str)) || 
-              (d.isToday && labelText.includes('today')) ||
-              (d.isTomorrow && labelText.includes('tomorrow'))
-            );
+    // Strategy A: Bulletproof `data-datekey` tracking
+    // This perfectly catches completed tasks that have lost their standard text identifiers
+    const containerWithKey = chip.closest('[data-datekey]');
+    if (containerWithKey) {
+        const key = containerWithKey.getAttribute('data-datekey');
+        if (dateKeyMap[key] !== undefined) {
+            targetDayInfo = datesInfo.find(d => d.offset === dateKeyMap[key]);
         }
-      }
     }
 
-    // Check 2: Using the task's own hidden text content
-    if (!targetDayInfo && hiddenText) {
-      targetDayInfo = datesInfo.find(d => 
-        d.matchStrings.some(str => hiddenText.includes(str)) || 
-        (d.isToday && hiddenText.includes('today')) ||
-        (d.isTomorrow && hiddenText.includes('tomorrow'))
-      );
+    // Strategy B: ARIA labels and Hidden Embedded Strings (Fallback)
+    if (!targetDayInfo) {
+        const hiddenSpan = chip.querySelector('.XuJrye');
+        const hiddenText = hiddenSpan ? hiddenSpan.textContent.toLowerCase() : "";
+        
+        const gridcell = chip.closest('[role="gridcell"]');
+        let labelText = "";
+        if (gridcell) {
+            const labelId = gridcell.getAttribute('aria-labelledby');
+            const labelEl = labelId ? document.getElementById(labelId) : null;
+            if (labelEl) labelText = labelEl.textContent.toLowerCase();
+        }
+
+        targetDayInfo = datesInfo.find(d => 
+            d.matchStrings.some(str => labelText.includes(str) || hiddenText.includes(str)) || 
+            (d.isToday && (labelText.includes('today') || hiddenText.includes('today'))) ||
+            (d.isTomorrow && (labelText.includes('tomorrow') || hiddenText.includes('tomorrow')))
+        );
     }
 
+    // Only process it if we successfully tied it to Today, Tomorrow, or Day After
     if (targetDayInfo) {
       seenTasks.add(eventId);
 
       let title = "";
       const titleSpan = chip.querySelector('.WBi6vc');
+      const hiddenSpan = chip.querySelector('.XuJrye');
+      
       if (titleSpan) title = titleSpan.textContent;
       else if (hiddenSpan) title = hiddenSpan.textContent;
       else title = chip.innerText;
 
       const points = extractPoints(title);
 
-      const markCompleteBtn = chip.querySelector('button[aria-label="Mark complete"]');
-      const markUncompletedBtn = chip.querySelector('button[aria-label="Mark uncompleted"]');
-      const isStrikethrough = !!chip.querySelector('span[style*="line-through"]');
-      
+      // Highly Aggressive Completion Check
       let isCompleted = false;
-      if (markUncompletedBtn) isCompleted = true;
-      else if (markCompleteBtn) isCompleted = false;
-      else if (isStrikethrough) isCompleted = true;
+      if (chip.querySelector('button[aria-label*="uncomplet"]')) isCompleted = true;
+      else if (chip.querySelector('button[aria-label*="complete"]')) isCompleted = false;
+      else if (chip.querySelector('s, strike, del, [style*="line-through"]')) isCompleted = true;
+      else if (hiddenSpan && hiddenSpan.textContent.toLowerCase().includes('not completed')) isCompleted = false;
+      else if (hiddenSpan && hiddenSpan.textContent.toLowerCase().includes('completed')) isCompleted = true;
 
       if (isCompleted) targetDayInfo.completedPoints += points;
       else targetDayInfo.uncompletedPoints += points;
     }
   });
 
-  // Inject the calculated projections into the respective Calendar Headers
+  // 4. Inject Badges into the respective Calendar Headers
   datesInfo.forEach(dayInfo => {
     let projPts = dayInfo.uncompletedPoints;
     
-    // Merge actual running score for Today
+    // Always combine uncompleted with verified completed totals.
+    // For "Today", we merge the DOM's completed state with the Extension's memory safely.
     if (dayInfo.isToday) {
       projPts += Math.max(CURRENT_DAILY_SCORE_MEM, dayInfo.completedPoints);
     } else {
       projPts += dayInfo.completedPoints;
     }
 
-    let targetH2 = null;
-    const headers = document.querySelectorAll('h2');
-    
-    for (const h2 of headers) {
-      const btn = h2.querySelector('button[data-datekey]');
-      const ariaLabel = h2.getAttribute('aria-label') || (btn ? btn.getAttribute('aria-label') : '');
-      if (!ariaLabel) continue;
-      
-      const labelLower = ariaLabel.toLowerCase();
-      
-      if (dayInfo.matchStrings.some(str => labelLower.includes(str)) ||
-          (dayInfo.isToday && labelLower.includes('today')) ||
-          (dayInfo.isTomorrow && labelLower.includes('tomorrow'))) {
-        targetH2 = h2;
-        break;
-      }
-    }
-
-    if (targetH2) {
-      let badge = targetH2.querySelector('.pb-day-badge');
+    if (dayInfo.targetH2) {
+      let badge = dayInfo.targetH2.querySelector('.pb-day-badge');
       if (!badge) {
         badge = document.createElement('span');
         badge.className = 'pb-day-badge';
-        
-        targetH2.style.position = 'relative';
-        targetH2.appendChild(badge);
+        dayInfo.targetH2.style.position = 'relative';
+        dayInfo.targetH2.appendChild(badge);
       }
       badge.innerText = `Proj: ${projPts}`;
     }
@@ -570,12 +588,14 @@ function handleRPGTaskComplete(points) {
 
 function extractPoints(text) {
   if (!text) return 1;
-  let match = text.match(/\{(\d+)\}(?=\s*(\n|$))/);
-  if (!match) {
-    const all = [...text.matchAll(/\{(\d+)\}/g)];
-    if(all.length > 0) match = all[all.length-1];
+  // Robust global regex to catch points anywhere in title without relying on strictly end-of-string
+  let match = text.match(/\{(\d+)\}/g);
+  if (match && match.length > 0) {
+      const lastMatch = match[match.length - 1];
+      const num = lastMatch.match(/\d+/)[0];
+      return parseInt(num, 10);
   }
-  return (match && match[1]) ? parseInt(match[1], 10) : 1;
+  return 1;
 }
 
 // Global Click Listener
