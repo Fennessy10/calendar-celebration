@@ -58,6 +58,38 @@
     }
     .title { font-size: 14px; font-weight: bold; }
     .desc { font-size: 11px; color: #9aa0a6; margin-top: 2px;}
+
+    /* PB Settings Panel */
+    .settings-panel {
+      background: #2d2e31;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none; /* hidden by default, toggled via JS */
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .settings-panel label {
+      font-size: 12px; 
+      color: #9aa0a6; 
+      display: block; 
+      margin-bottom: 8px; 
+      font-weight: bold;
+    }
+    .settings-panel select {
+      width: 100%;
+      background: #202124;
+      color: #e8eaed;
+      border: 1px solid #5f6368;
+      border-radius: 4px;
+      padding: 6px;
+      outline: none;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .settings-panel select:focus {
+      border-color: #38ef7d;
+    }
   </style>
 </head>
 <body>
@@ -77,6 +109,15 @@
       <div class="title">RPG Level Up</div>
       <div class="desc">Permanent levels, unlock colors.</div>
     </div>
+  </div>
+
+  <div class="settings-panel" id="pb-settings">
+    <label for="pb-tier-select">PB Mode Settings</label>
+    <select id="pb-tier-select">
+      <option value="5">5 Tiers (God-Like at 50)</option>
+      <option value="6">6 Tiers (God-Like at 60)</option>
+      <option value="7">7 Tiers (God-Like at 70)</option>
+    </select>
   </div>
 
   <script src="popup.js"></script>

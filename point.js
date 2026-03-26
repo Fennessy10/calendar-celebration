@@ -6,6 +6,50 @@ const SOUND_VOLUME = 0.2;
 let CURRENT_MODE = 'pb'; // 'pb' or 'rpg'
 let CURRENT_DAILY_SCORE_MEM = 0; // Tracks the daily score memory for projection math
 
+let PB_CONFIG = {};
+
+function initPBConfig(tierCount) {
+  const baseTiers = [
+    { min: 0, max: 19, name: "Pathetic", color: '#0e4429' },          // Very dark green
+    { min: 20, max: 29, name: "Underwhelming", color: '#006d32' },   // Dark green
+    { min: 30, max: 39, name: "Solid", color: '#26a641' },           // Medium green
+    { min: 40, max: 49, name: "Masterful", color: '#39d353' }        // Bright green
+  ];
+
+  if (tierCount === 5) {
+    PB_CONFIG = {
+      DEFAULT_POINTS: 1,
+      MAX_BAR_SCORE: 50,
+      TIERS: [
+        ...baseTiers,
+        { min: 50, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+      ]
+    };
+  } else if (tierCount === 6) {
+    PB_CONFIG = {
+      DEFAULT_POINTS: 1,
+      MAX_BAR_SCORE: 60,
+      TIERS: [
+        ...baseTiers,
+        { min: 50, max: 59, name: "Unstoppable", color: '#4ae564' },
+        { min: 60, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+      ]
+    };
+  } else {
+    // 7 Tiers (Default)
+    PB_CONFIG = {
+      DEFAULT_POINTS: 1,
+      MAX_BAR_SCORE: 70,
+      TIERS: [
+        ...baseTiers,
+        { min: 50, max: 59, name: "Unstoppable", color: '#4ae564' },
+        { min: 60, max: 69, name: "Legendary", color: '#5cf575' },
+        { min: 70, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+      ]
+    };
+  }
+}
+
 // --- SOUNDS ---
 function playSound(type) {
   let file = 'assets/plinker.mp3';
@@ -30,37 +74,13 @@ function triggerConfetti() {
 //           SYSTEM 1: DAILY PB CHASER
 // ==========================================
 
-const PB_CONFIG = {
-  DEFAULT_POINTS: 1,
-  MAX_BAR_SCORE: 70,
-  TIERS: [
-    { min: 0, max: 19, name: "Pathetic", color: '#0e4429' },          // Very dark green
-    { min: 20, max: 29, name: "Underwhelming", color: '#006d32' },   // Dark green
-    { min: 30, max: 39, name: "Solid", color: '#26a641' },           // Medium green
-    { min: 40, max: 49, name: "Masterful", color: '#39d353' },       // Bright green
-    { min: 50, max: 59, name: "Unstoppable", color: '#4ae564' },     // Lighter green
-    { min: 60, max: 69, name: "Legendary", color: '#5cf575' },       // Very light green
-    { min: 70, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true } // Glowing neon green
-  ]
-};
-
-function getTierLevel(score) {
-    if (score >= 70) return 7;
-    if (score >= 60) return 6;
-    if (score >= 50) return 5;
-    if (score >= 40) return 4;
-    if (score >= 30) return 3;
-    if (score >= 20) return 2;
-    return 1;
-}
-
 function initPBMode() {
-  console.log("Daily PB Chaser Mode Activated 🏆");
+  console.log(`Daily PB Chaser Mode Activated 🏆 (Max Tiers: ${PB_CONFIG.TIERS.length})`);
   injectPBStyles();
   createPBTracker();
   loadAndResetPBIfNeeded();
   
-  // Start the 3-day projection loop as a fallback
+  // Start the projection loop
   setInterval(updateDailyProjections, 2000);
 
   // INSTANT UPDATE: Use MutationObserver to instantly detect when tasks are added/removed/edited 
@@ -154,6 +174,17 @@ function createPBTracker() {
   container.className = 'pb-tracker-container';
   container.id = 'pb-ui-root';
 
+  // Dynamically generate the milestone divs based on settings
+  let milestonesHTML = '';
+  PB_CONFIG.TIERS.forEach((tier, index) => {
+      // Don't draw a line at 0 (Pathetic) or at the very end boundary (God-Like)
+      if (index > 0 && index < PB_CONFIG.TIERS.length - 1) { 
+          const pct = (tier.min / PB_CONFIG.MAX_BAR_SCORE) * 100;
+          const pctRounded = pct.toFixed(2);
+          milestonesHTML += `<div class="pb-milestone" style="left: ${pctRounded}%;" title="${tier.name} (${tier.min})"></div>\n        `;
+      }
+  });
+
   container.innerHTML = `
     <div class="pb-tracker-header">
       <div class="pb-score-wrapper">
@@ -165,11 +196,7 @@ function createPBTracker() {
     </div>
     <div class="pb-bar-bg">
         <div class="pb-bar-fill" id="pb-bar"></div>
-        <div class="pb-milestone" style="left: 28.57%;" title="Underwhelming (20)"></div>
-        <div class="pb-milestone" style="left: 42.85%;" title="Solid (30)"></div>
-        <div class="pb-milestone" style="left: 57.14%;" title="Masterful (40)"></div>
-        <div class="pb-milestone" style="left: 71.42%;" title="Unstoppable (50)"></div>
-        <div class="pb-milestone" style="left: 85.71%;" title="Legendary (60)"></div>
+        ${milestonesHTML}
     </div>
   `;
 
@@ -198,7 +225,9 @@ function updatePBUI(dailyScore) {
   scoreDisplay.innerText = `${dailyScore} pts`;
   
   // Find Current Tier
-  const currentTier = PB_CONFIG.TIERS.find(t => dailyScore >= t.min && dailyScore <= t.max);
+  const currentTierIndex = PB_CONFIG.TIERS.findIndex(t => dailyScore >= t.min && dailyScore <= t.max);
+  const currentTier = PB_CONFIG.TIERS[currentTierIndex] || PB_CONFIG.TIERS[PB_CONFIG.TIERS.length - 1];
+  
   targetDisplay.innerText = currentTier.name;
   
   // Reset classes
@@ -219,7 +248,7 @@ function updatePBUI(dailyScore) {
       targetDisplay.style.color = '#bdc1c6';
   }
   
-  // Calculate Bar Width (Maxes out at 70)
+  // Calculate Bar Width
   const percentage = Math.min((dailyScore / PB_CONFIG.MAX_BAR_SCORE) * 100, 100);
   barFill.style.width = `${percentage}%`;
   barFill.style.backgroundColor = currentTier.color;
@@ -287,11 +316,12 @@ function handlePBTaskComplete(points) {
         if (newScore > allTimePB) allTimePB = newScore;
 
         // --- TIER & SOUND LOGIC ---
-        const oldTier = getTierLevel(oldScore);
-        const newTier = getTierLevel(newScore);
+        const oldTierIndex = PB_CONFIG.TIERS.findIndex(t => oldScore >= t.min && oldScore <= t.max);
+        const newTierIndex = PB_CONFIG.TIERS.findIndex(t => newScore >= t.min && newScore <= t.max);
 
-        if (newTier > oldTier && newTier > 1) {
-            if (newTier >= 7) playSound('major');
+        if (newTierIndex > oldTierIndex && newTierIndex > 0) {
+            // Reached the ultimate tier for the current config
+            if (PB_CONFIG.TIERS[newTierIndex].isGodLike) playSound('major');
             else playSound('levelup');
             triggerConfetti();
         } else {
@@ -637,8 +667,14 @@ document.body.addEventListener('click', function(event) {
 }, true);
 
 // Init
-chrome.storage.sync.get(['extensionMode'], (data) => {
+chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
   CURRENT_MODE = data.extensionMode || 'pb';
-  if (CURRENT_MODE === 'pb') initPBMode();
-  else initRPGMode();
+  const tierCount = data.pbTierCount || 7; // Default to 7 tiers
+
+  if (CURRENT_MODE === 'pb') {
+    initPBConfig(tierCount);
+    initPBMode();
+  } else {
+    initRPGMode();
+  }
 });
