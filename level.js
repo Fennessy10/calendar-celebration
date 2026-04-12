@@ -83,6 +83,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     document.head.appendChild(styleSheet);
 
     const progressBarContainer = document.createElement('div');
+    progressBarContainer.id = 'rpg-progress-bar'; // Add unique ID for easy removal
     Object.assign(progressBarContainer.style, {
       position: 'fixed',
       top: '0',
@@ -218,4 +219,8 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     });
 
   } // End of RPG mode check
+  else {
+    // Clean up RPG progress bar when switching away from RPG mode
+    document.getElementById('rpg-progress-bar')?.remove();
+  }
 });

@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
   const btnPb = document.getElementById('btn-pb');
   const btnRpg = document.getElementById('btn-rpg');
+  const btnSound = document.getElementById('btn-sound');
   const pbSettings = document.getElementById('pb-settings');
   const tierSelect = document.getElementById('pb-tier-select');
 
-  if (!btnPb || !btnRpg) {
+  if (!btnPb || !btnRpg || !btnSound) {
     console.error("Buttons not found in popup.html");
     return;
   }
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. Click Handlers for Modes
   btnPb.addEventListener('click', () => handleSelection('pb'));
   btnRpg.addEventListener('click', () => handleSelection('rpg'));
+  btnSound.addEventListener('click', () => handleSelection('sound'));
 
   // 3. Change Handler for Tiers
   tierSelect.addEventListener('change', (e) => {
@@ -44,29 +46,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'pb') {
       btnPb.classList.add('active');
       btnRpg.classList.remove('active', 'rpg');
+      btnSound.classList.remove('active', 'sound');
       pbSettings.style.display = 'block'; // Show PB Settings
-    } else {
+    } else if (mode === 'rpg') {
       btnRpg.classList.add('active', 'rpg');
       btnPb.classList.remove('active');
+      btnSound.classList.remove('active', 'sound');
+      pbSettings.style.display = 'none'; // Hide PB Settings
+    } else if (mode === 'sound') {
+      btnSound.classList.add('active', 'sound');
+      btnPb.classList.remove('active');
+      btnRpg.classList.remove('active', 'rpg');
       pbSettings.style.display = 'none'; // Hide PB Settings
     }
   }
 
   function reloadCalendarTab() {
-    // We query tabs safely
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    // Query all tabs to find a calendar tab, regardless of which window is active
+    chrome.tabs.query({}, function(tabs) {
       if (chrome.runtime.lastError) {
         console.log("Tab query error:", chrome.runtime.lastError);
         return;
       }
       
-      const activeTab = tabs[0];
+      // Find the first calendar tab
+      const calendarTab = tabs.find(tab => tab.url && tab.url.includes("calendar.google.com"));
       
-      // Check if tab exists and if it is Google Calendar
-      if (activeTab && activeTab.url && activeTab.url.includes("calendar.google.com")) {
-          chrome.tabs.reload(activeTab.id);
+      if (calendarTab) {
+        chrome.tabs.reload(calendarTab.id);
+        console.log("Reloaded calendar tab");
       } else {
-          console.log("Not on Google Calendar, skipped reload.");
+        console.log("No active calendar tab found to reload.");
       }
     });
   }

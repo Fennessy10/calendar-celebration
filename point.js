@@ -674,7 +674,6 @@ chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
   if (CURRENT_MODE === 'pb') {
     initPBConfig(tierCount);
     initPBMode();
-  } else {
-    initRPGMode();
   }
+  // Don't do anything for 'rpg' or 'sound' modes - they're handled by their respective scripts
 });
