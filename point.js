@@ -88,7 +88,9 @@ function initPBMode() {
   const observer = new MutationObserver(() => {
       clearTimeout(debounceTimer);
       // Wait 300ms after DOM settles to run the scrape to avoid lag
-      debounceTimer = setTimeout(updateDailyProjections, 300); 
+      debounceTimer = setTimeout(() => {
+        updateDailyProjections();
+      }, 300); 
   });
   
   // Start observing the whole body for UI changes
@@ -164,6 +166,12 @@ function injectPBStyles() {
       line-height: 1;
       font-family: 'Google Sans', sans-serif;
       z-index: 10;
+    }
+
+    /* All-Day Section Expansion Override - Allows it to grow before internal scrolling */
+    body:has(button[jsname="xaTImb"][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"],
+    body:has(button[aria-label*="all-day" i][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"] {
+        max-height: 75vh !important;
     }
   `;
   document.head.appendChild(style);
@@ -538,6 +546,12 @@ function injectRPGStyles() {
     .rpg-bar-fill { height: 100%; width: 0%; border-radius: 6px; transition: width 0.5s ease, background 0.5s ease; }
     @keyframes rpgFlash { 0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.9); } 100% { box-shadow: 0 0 20px 0 rgba(255,215,0,0); } }
     .level-up-flash { animation: rpgFlash 0.8s ease-out; }
+
+    /* All-Day Section Expansion Override - Allows it to grow before internal scrolling */
+    body:has(button[jsname="xaTImb"][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"],
+    body:has(button[aria-label*="all-day" i][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"] {
+        max-height: 75vh !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -674,6 +688,7 @@ chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
   if (CURRENT_MODE === 'pb') {
     initPBConfig(tierCount);
     initPBMode();
+  } else {
+    initRPGMode();
   }
-  // Don't do anything for 'rpg' or 'sound' modes - they're handled by their respective scripts
 });
