@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["https://calendar.google.com/calendar/*"],
-      "js": ["level.js", "point.js", "soundOnly.js", "colorChanger.js"]
+      "js": ["level.js", "point.js", "soundOnly.js", "colorChanger.js", "pomodoro.js"]
     },
     {
       "matches": ["https://trello.com/*"],

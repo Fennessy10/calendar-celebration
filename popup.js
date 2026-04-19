@@ -2,10 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPb = document.getElementById('btn-pb');
   const btnRpg = document.getElementById('btn-rpg');
   const btnSound = document.getElementById('btn-sound');
+  const btnPomodoro = document.getElementById('btn-pomodoro');
   const pbSettings = document.getElementById('pb-settings');
   const tierSelect = document.getElementById('pb-tier-select');
 
-  if (!btnPb || !btnRpg || !btnSound) {
+  if (!btnPb || !btnRpg || !btnSound || !btnPomodoro) {
     console.error("Buttons not found in popup.html");
     return;
   }
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnPb.addEventListener('click', () => handleSelection('pb'));
   btnRpg.addEventListener('click', () => handleSelection('rpg'));
   btnSound.addEventListener('click', () => handleSelection('sound'));
+  btnPomodoro.addEventListener('click', () => handleSelection('pomodoro'));
 
   // 3. Change Handler for Tiers
   tierSelect.addEventListener('change', (e) => {
@@ -47,16 +49,25 @@ document.addEventListener('DOMContentLoaded', () => {
       btnPb.classList.add('active');
       btnRpg.classList.remove('active', 'rpg');
       btnSound.classList.remove('active', 'sound');
+      btnPomodoro.classList.remove('active', 'pomodoro');
       pbSettings.style.display = 'block'; // Show PB Settings
     } else if (mode === 'rpg') {
       btnRpg.classList.add('active', 'rpg');
       btnPb.classList.remove('active');
       btnSound.classList.remove('active', 'sound');
+      btnPomodoro.classList.remove('active', 'pomodoro');
       pbSettings.style.display = 'none'; // Hide PB Settings
     } else if (mode === 'sound') {
       btnSound.classList.add('active', 'sound');
       btnPb.classList.remove('active');
       btnRpg.classList.remove('active', 'rpg');
+      btnPomodoro.classList.remove('active', 'pomodoro');
+      pbSettings.style.display = 'none'; // Hide PB Settings
+    } else if (mode === 'pomodoro') {
+      btnPomodoro.classList.add('active', 'pomodoro');
+      btnPb.classList.remove('active');
+      btnRpg.classList.remove('active', 'rpg');
+      btnSound.classList.remove('active', 'sound');
       pbSettings.style.display = 'none'; // Hide PB Settings
     }
   }
