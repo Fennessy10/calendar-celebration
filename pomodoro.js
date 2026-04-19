@@ -16,27 +16,27 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       top: '0',
       left: '50%',
       transform: 'translateX(-50%)',
-      width: '350px',
+      width: '480px',
       backgroundColor: '#202124',
       color: 'white',
       borderRadius: '0 0 12px 12px',
       zIndex: '9999',
-      boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
+      boxShadow: '0 5px 20px rgba(0, 0, 0, 0.6)',
       border: '1px solid rgba(255, 255, 255, 0.1)',
       borderTop: 'none',
-      padding: '12px',
+      padding: '12px 20px',
       fontFamily: "'Google Sans', Roboto, Arial, sans-serif",
       display: 'flex',
-      flexDirection: 'column',
-      gap: '8px'
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between'
     });
 
-    const headerContainer = document.createElement('div');
-    Object.assign(headerContainer.style, {
+    const leftSection = document.createElement('div');
+    Object.assign(leftSection.style, {
       display: 'flex',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      width: '100%'
+      gap: '15px'
     });
 
     const titleText = document.createElement('div');
@@ -48,29 +48,29 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     const timeDisplay = document.createElement('div');
     timeDisplay.textContent = formatTime(timeLeft);
     timeDisplay.style.fontWeight = 'bold';
-    timeDisplay.style.fontSize = '24px';
+    timeDisplay.style.fontSize = '22px';
     timeDisplay.style.fontFamily = 'monospace';
+    timeDisplay.style.color = '#e8eaed';
 
-    headerContainer.appendChild(titleText);
-    headerContainer.appendChild(timeDisplay);
+    leftSection.appendChild(titleText);
+    leftSection.appendChild(timeDisplay);
 
     const controlsContainer = document.createElement('div');
     Object.assign(controlsContainer.style, {
       display: 'flex',
-      gap: '10px',
-      justifyContent: 'center'
+      gap: '8px'
     });
 
     const btnStyle = {
-      background: '#3c4043',
-      color: 'white',
-      border: 'none',
-      padding: '6px 16px',
+      background: 'transparent',
+      color: '#9aa0a6',
+      border: '1px solid #5f6368',
+      padding: '6px 12px',
       borderRadius: '4px',
       cursor: 'pointer',
       fontSize: '13px',
       fontWeight: 'bold',
-      flex: '1'
+      transition: 'all 0.2s ease'
     };
 
     const startBtn = document.createElement('button');
@@ -81,10 +81,16 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     resetBtn.textContent = 'Reset';
     Object.assign(resetBtn.style, btnStyle);
 
+    // Hover effects
+    startBtn.onmouseover = () => startBtn.style.background = '#3c4043';
+    startBtn.onmouseout = () => { if (!isRunning) startBtn.style.background = 'transparent'; };
+    resetBtn.onmouseover = () => resetBtn.style.background = '#3c4043';
+    resetBtn.onmouseout = () => resetBtn.style.background = 'transparent';
+
     controlsContainer.appendChild(startBtn);
     controlsContainer.appendChild(resetBtn);
 
-    pomodoroContainer.appendChild(headerContainer);
+    pomodoroContainer.appendChild(leftSection);
     pomodoroContainer.appendChild(controlsContainer);
     document.body.appendChild(pomodoroContainer);
 
@@ -110,8 +116,9 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       if (isRunning) {
         clearInterval(timerInterval);
         startBtn.textContent = 'Start';
-        startBtn.style.background = '#3c4043';
-        startBtn.style.color = 'white';
+        startBtn.style.background = 'transparent';
+        startBtn.style.color = '#9aa0a6';
+        startBtn.style.borderColor = '#5f6368';
       } else {
         if (timeLeft === 0) timeLeft = POMODORO_TIME;
         
@@ -123,8 +130,9 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
             clearInterval(timerInterval);
             isRunning = false;
             startBtn.textContent = 'Start';
-            startBtn.style.background = '#3c4043';
-            startBtn.style.color = 'white';
+            startBtn.style.background = 'transparent';
+            startBtn.style.color = '#9aa0a6';
+            startBtn.style.borderColor = '#5f6368';
             playSound();
             alert("Pomodoro Complete! Take a break.");
           }
@@ -133,6 +141,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
         startBtn.textContent = 'Pause';
         startBtn.style.background = '#ff6347';
         startBtn.style.color = '#202124';
+        startBtn.style.borderColor = '#ff6347';
       }
       isRunning = !isRunning;
     }
@@ -143,8 +152,9 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       timeLeft = POMODORO_TIME;
       updateDisplay();
       startBtn.textContent = 'Start';
-      startBtn.style.background = '#3c4043';
-      startBtn.style.color = 'white';
+      startBtn.style.background = 'transparent';
+      startBtn.style.color = '#9aa0a6';
+      startBtn.style.borderColor = '#5f6368';
     }
 
     startBtn.addEventListener('click', toggleTimer);
