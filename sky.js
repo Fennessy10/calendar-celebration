@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getCurrentStars() {
     let stars = pomodoroHistory[currentKey] || [];
+    // Backwards compatibility check
     if (typeof stars === 'number') {
       stars = Array(stars).fill(25 * 60);
     }
@@ -98,18 +99,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return seed / 233280;
     }
 
-    const uiRect = uiBox.getBoundingClientRect();
+    const uiRect = uiBox ? uiBox.getBoundingClientRect() : { left: 0, right: 0, top: 0, bottom: 0 };
     const uiLeft = (uiRect.left - window.innerWidth / 2) / 4;
     const uiRight = (uiRect.right - window.innerWidth / 2) / 4;
     const uiTop = (uiRect.top - window.innerHeight / 2) / 4;
     const uiBottom = (uiRect.bottom - window.innerHeight / 2) / 4;
 
     function isInsideUI(x, y) {
+      if (!uiBox) return false;
       return x >= uiLeft - 5 && x <= uiRight + 5 && y >= uiTop - 5 && y <= uiBottom + 5;
     }
 
     let starsDrawn = 0;
     let i = 0;
+    const starCount = currentStars.length;
 
     // Use while loop to ensure we draw exactly starCount stars that are outside UI
     while (starsDrawn < starCount && i < 100000) {
@@ -119,32 +122,35 @@ document.addEventListener('DOMContentLoaded', () => {
       const x = Math.floor(Math.cos(angle) * radius);
       const y = Math.floor(Math.sin(angle) * radius);
       
-      const type = random();
       i++;
 
       if (isInsideUI(x, y)) {
         continue;
       }
       
-      starsDrawn++;
-
-      // Normal detail
-      if (type > 0.95) {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x, y, 2, 2);
-      } else if (type > 0.8) {
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(x, y, 1, 1);
-      } else if (type > 0.6) {
-        ctx.fillStyle = '#ffc';
-        ctx.fillRect(x, y, 1, 1);
-      } else if (type > 0.5) {
-         ctx.fillStyle = '#cff';
-         ctx.fillRect(x, y, 1, 1);
+      const duration = currentStars[starsDrawn];
+      const isFiftyMinute = duration >= 50 * 60; // 50 mins in seconds
+      const type = random();
+      
+      if (isFiftyMinute) {
+         // 50m Session: Always draw a 2x2 bright star
+         ctx.fillStyle = '#fff';
+         ctx.fillRect(x, y, 2, 2);
       } else {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x, y, 1, 1);
+         // 25m Session: 1x1 star with slightly varied colors based on the type
+         if (type > 0.8) {
+           ctx.fillStyle = '#ccc';
+         } else if (type > 0.6) {
+           ctx.fillStyle = '#ffc';
+         } else if (type > 0.5) {
+           ctx.fillStyle = '#cff';
+         } else {
+           ctx.fillStyle = '#fff';
+         }
+         ctx.fillRect(x, y, 1, 1);
       }
+
+      starsDrawn++;
     }
     
     ctx.restore();

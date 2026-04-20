@@ -45,17 +45,17 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     arrowsContainer.style.justifyContent = 'center';
 
     const upArrow = document.createElement('div');
-    upArrow.innerHTML = '&#9650;';
+    upArrow.innerHTML = '&#9650;'; // Up arrow
     upArrow.style.fontSize = '10px';
     upArrow.style.cursor = 'pointer';
-    upArrow.style.color = '#9aa0a6'; // Enabled
+    upArrow.style.color = '#9aa0a6'; // Enabled by default at 25m
     upArrow.style.lineHeight = '1';
 
     const downArrow = document.createElement('div');
-    downArrow.innerHTML = '&#9660;';
+    downArrow.innerHTML = '&#9660;'; // Down arrow
     downArrow.style.fontSize = '10px';
     downArrow.style.cursor = 'default';
-    downArrow.style.color = '#5f6368'; // Disabled at 25
+    downArrow.style.color = '#5f6368'; // Disabled by default at 25m
     downArrow.style.lineHeight = '1';
     downArrow.style.marginTop = '2px';
 
@@ -128,7 +128,6 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     const skyBtn = document.createElement('button');
     skyBtn.textContent = 'Night Sky';
     Object.assign(skyBtn.style, btnStyle);
-    // skyBtn.style.marginLeft = '12px'; // Removed the margin left as we reordered
 
     // Hover effects
     startBtn.onmouseover = () => startBtn.style.background = '#3c4043';
@@ -139,13 +138,14 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     skyBtn.onmouseout = () => skyBtn.style.background = 'transparent';
     skyBtn.onclick = () => window.open(chrome.runtime.getURL('sky.html'), '_blank');
 
-    // "night sky" on left, timer, "gum", "reset" on right
+    // Button Ordering: Night Sky (Left) | Timer | Gum | Reset (Right)
     pomodoroContainer.appendChild(skyBtn);
     pomodoroContainer.appendChild(timeWrapper);
     pomodoroContainer.appendChild(startBtn);
     pomodoroContainer.appendChild(resetBtn);
 
     document.body.appendChild(pomodoroContainer);
+    updateArrowStates();
 
     // --- LOGIC ---
     function formatTime(seconds) {
@@ -155,7 +155,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     }
 
     function playSound() {
-      const soundUrl = chrome.runtime.getURL('assets/10-levels.mp3'); // Re-using an existing sound for alarm
+      const soundUrl = chrome.runtime.getURL('assets/10-levels.mp3'); 
       const audio = new Audio(soundUrl);
       audio.volume = 0.5;
       audio.play().catch(e => console.error("Error playing sound:", e));
@@ -235,7 +235,6 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     resetBtn.addEventListener('click', resetTimer);
 
   } else {
-    // Cleanup if switching away from Pomodoro mode
     document.getElementById('pomodoro-bar')?.remove();
   }
 });
