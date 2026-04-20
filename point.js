@@ -167,12 +167,6 @@ function injectPBStyles() {
       font-family: 'Google Sans', sans-serif;
       z-index: 10;
     }
-
-    /* All-Day Section Expansion Override - Allows it to grow before internal scrolling */
-    body:has(button[jsname="xaTImb"][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"],
-    body:has(button[aria-label*="all-day" i][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"] {
-        max-height: 75vh !important;
-    }
   `;
   document.head.appendChild(style);
 }
@@ -498,135 +492,6 @@ function updateDailyProjections() {
 }
 
 // ==========================================
-//           SYSTEM 2: RPG LEVEL UP
-// ==========================================
-
-const RPG_CONFIG = {
-  XP_PER_TASK: 20, // Default fixed XP
-  BASE_XP: 300,
-  GRADIENTS: [
-    'linear-gradient(90deg, #FF512F, #DD2476)', // 1-4 Red
-    'linear-gradient(90deg, #8E2DE2, #4A00E0)', // 5-9 Purple
-    'linear-gradient(90deg, #e65c00, #F9D423)', // 10-14 Orange
-    'linear-gradient(90deg, #11998e, #38ef7d)', // 15-19 Teal
-    'linear-gradient(90deg, #FC466B, #3F5EFB)', // 20-24 Pink/Blue
-    'linear-gradient(90deg, #00d2ff, #3a7bd5)', // 25-29 Cyan
-    'linear-gradient(90deg, #f2709c, #ff9472)', // 30-34 Coral
-    'linear-gradient(90deg, #c31432, #240b36)', // 35-39 Dark Red
-    'linear-gradient(90deg, #FFD700, #FDB931)', // 40-44 Gold
-    'linear-gradient(90deg, #E0E0E0, #BDBDBD)', // 45-49 Silver
-    'linear-gradient(90deg, #B24592, #F15F79)', // 50-54 Grapefruit
-    'linear-gradient(90deg, #00F260, #0575E6)', // 55-59 Emerald
-  ]
-};
-
-function initRPGMode() {
-  console.log("RPG Mode Activated ⚔️");
-  injectRPGStyles();
-  createRPGTracker();
-  loadRPGData();
-}
-
-function injectRPGStyles() {
-  const style = document.createElement("style");
-  style.id = "rpg-styles";
-  style.innerText = `
-    .rpg-tracker {
-      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-      width: 400px; background-color: #202124; color: white;
-      border-radius: 0 0 12px 12px; z-index: 9999;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
-      border-top: none; padding: 12px; font-family: 'Google Sans', sans-serif;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .rpg-text { display: flex; justify-content: space-between; align-items: baseline; }
-    .rpg-level { font-weight: bold; font-size: 18px; color: #e8eaed; }
-    .rpg-xp { font-size: 12px; color: #bdc1c6; }
-    .rpg-bar-bg { width: 100%; height: 12px; background: #5f6368; border-radius: 6px; overflow: hidden; }
-    .rpg-bar-fill { height: 100%; width: 0%; border-radius: 6px; transition: width 0.5s ease, background 0.5s ease; }
-    @keyframes rpgFlash { 0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.9); } 100% { box-shadow: 0 0 20px 0 rgba(255,215,0,0); } }
-    .level-up-flash { animation: rpgFlash 0.8s ease-out; }
-
-    /* All-Day Section Expansion Override - Allows it to grow before internal scrolling */
-    body:has(button[jsname="xaTImb"][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"],
-    body:has(button[aria-label*="all-day" i][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"] {
-        max-height: 75vh !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function createRPGTracker() {
-  const div = document.createElement('div');
-  div.className = 'rpg-tracker';
-  div.id = 'rpg-ui-root';
-  div.innerHTML = `
-    <div class="rpg-text">
-      <div class="rpg-level" id="rpg-level-txt">Level 1</div>
-      <div class="rpg-xp" id="rpg-xp-txt">0 / 300 XP</div>
-    </div>
-    <div class="rpg-bar-bg"><div class="rpg-bar-fill" id="rpg-bar"></div></div>
-  `;
-  document.body.appendChild(div);
-}
-
-function updateRPGUI(level, xp) {
-  const lvlTxt = document.getElementById('rpg-level-txt');
-  const xpTxt = document.getElementById('rpg-xp-txt');
-  const bar = document.getElementById('rpg-bar');
-  if(!lvlTxt) return;
-
-  const target = RPG_CONFIG.BASE_XP;
-  lvlTxt.innerText = `Level ${level}`;
-  xpTxt.innerText = `${xp} / ${target} XP`;
-  
-  const pct = (xp / target) * 100;
-  bar.style.width = `${pct}%`;
-  
-  // Color
-  const tier = Math.floor((level - 1) / 5);
-  bar.style.background = RPG_CONFIG.GRADIENTS[tier % RPG_CONFIG.GRADIENTS.length];
-}
-
-function loadRPGData() {
-  chrome.storage.sync.get(['rpgLevel', 'rpgXP'], (data) => {
-    updateRPGUI(data.rpgLevel || 1, data.rpgXP || 0);
-  });
-}
-
-function handleRPGTaskComplete(points) {
-  const xpGain = RPG_CONFIG.XP_PER_TASK + (points > 1 ? points * 5 : 0);
-
-  chrome.storage.sync.get(['rpgLevel', 'rpgXP'], (data) => {
-    let level = data.rpgLevel || 1;
-    let xp = (data.rpgXP || 0) + xpGain;
-    const target = RPG_CONFIG.BASE_XP;
-    let leveledUp = false;
-
-    while(xp >= target) {
-      level++;
-      xp -= target;
-      leveledUp = true;
-    }
-
-    if(leveledUp) {
-      playSound('major');
-      triggerConfetti();
-      const ui = document.getElementById('rpg-ui-root');
-      if(ui) {
-        ui.classList.add('level-up-flash');
-        setTimeout(() => ui.classList.remove('level-up-flash'), 800);
-      }
-    } else {
-      playSound('success'); 
-    }
-
-    chrome.storage.sync.set({ rpgLevel: level, rpgXP: xp });
-    updateRPGUI(level, xp);
-  });
-}
-
-// ==========================================
 //           MAIN CONTROLLER
 // ==========================================
 
@@ -675,8 +540,6 @@ document.body.addEventListener('click', function(event) {
 
   if (CURRENT_MODE === 'pb') {
     handlePBTaskComplete(points);
-  } else {
-    handleRPGTaskComplete(points);
   }
 }, true);
 
@@ -689,6 +552,7 @@ chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
     initPBConfig(tierCount);
     initPBMode();
   } else {
-    initRPGMode();
+    document.getElementById('pb-ui-root')?.remove();
+    document.getElementById('pb-styles')?.remove();
   }
 });

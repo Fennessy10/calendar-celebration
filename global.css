@@ -1,0 +1,5 @@
+/* All-Day Section Expansion Override - Allows it to grow before internal scrolling */
+body:has(button[jsname="xaTImb"][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"],
+body:has(button[aria-label*="all-day" i][aria-expanded="true"]) div[jsname="sZR1Lb"][role="row"] {
+    max-height: 75vh !important;
+}

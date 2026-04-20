@@ -16,6 +16,7 @@
   "content_scripts": [
     {
       "matches": ["https://calendar.google.com/calendar/*"],
+      "css": ["global.css"],
       "js": ["level.js", "point.js", "soundOnly.js", "colorChanger.js", "pomodoro.js"]
     },
     {
@@ -25,7 +26,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*.mp3", "statistics.html"],
+      "resources": ["assets/*.mp3", "statistics.html", "sky.html"],
       "matches": ["<all_urls>"]
     }
   ]
