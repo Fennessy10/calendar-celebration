@@ -7,6 +7,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     let timeLeft = POMODORO_TIME;
     let timerInterval = null;
     let isRunning = false;
+    let expectedEndTime = 0; // Track absolute end time to prevent background throttling
 
     // --- CREATE UI ---
     const pomodoroContainer = document.createElement('div');
@@ -173,9 +174,50 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       timeDisplay.textContent = formatTime(timeLeft);
     }
 
+    // Consolidated execution logic into a standalone tick function
+    function tick() {
+      if (!isRunning) return;
+
+      // Calculate time remaining relative to the real-world clock
+      const now = Date.now();
+      timeLeft = Math.max(0, Math.ceil((expectedEndTime - now) / 1000));
+      
+      updateDisplay();
+
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        timeLeft = 0; // Force to 0 strictly on finish
+        startBtn.textContent = 'Gum';
+        startBtn.style.background = 'transparent';
+        startBtn.style.color = '#9aa0a6';
+        startBtn.style.borderColor = '#5f6368';
+        playSound();
+        triggerConfetti();
+        chrome.storage.local.get(['pomodoroHistory'], (result) => {
+          const history = result.pomodoroHistory || {};
+          const date = new Date();
+          const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          
+          if (!Array.isArray(history[key])) {
+            const oldCount = typeof history[key] === 'number' ? history[key] : 0;
+            history[key] = Array(oldCount).fill(25 * 60);
+          }
+          history[key].push(POMODORO_TIME);
+          
+          chrome.storage.local.set({ pomodoroHistory: history });
+        });
+      }
+    }
+
     function toggleTimer() {
       if (isRunning) {
         clearInterval(timerInterval);
+        
+        // Calculate exact time left when paused
+        const now = Date.now();
+        timeLeft = Math.max(0, Math.ceil((expectedEndTime - now) / 1000));
+        
         startBtn.textContent = 'Gum';
         startBtn.style.background = 'transparent';
         startBtn.style.color = '#9aa0a6';
@@ -183,34 +225,10 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       } else {
         if (timeLeft === 0) timeLeft = POMODORO_TIME;
         
-        timerInterval = setInterval(() => {
-          timeLeft--;
-          updateDisplay();
-
-          if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            isRunning = false;
-            startBtn.textContent = 'Gum';
-            startBtn.style.background = 'transparent';
-            startBtn.style.color = '#9aa0a6';
-            startBtn.style.borderColor = '#5f6368';
-            playSound();
-            triggerConfetti();
-            chrome.storage.local.get(['pomodoroHistory'], (result) => {
-              const history = result.pomodoroHistory || {};
-              const date = new Date();
-              const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-              
-              if (!Array.isArray(history[key])) {
-                const oldCount = typeof history[key] === 'number' ? history[key] : 0;
-                history[key] = Array(oldCount).fill(25 * 60);
-              }
-              history[key].push(POMODORO_TIME);
-              
-              chrome.storage.local.set({ pomodoroHistory: history });
-            });
-          }
-        }, 1000);
+        // Lock in the absolute expected completion time
+        expectedEndTime = Date.now() + (timeLeft * 1000);
+        
+        timerInterval = setInterval(tick, 1000);
         
         startBtn.textContent = 'Pause';
         startBtn.style.background = '#ff6347';
@@ -233,6 +251,13 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
     startBtn.addEventListener('click', toggleTimer);
     resetBtn.addEventListener('click', resetTimer);
+
+    // NEW: Instantly update the visual timer when switching back to the tab
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && isRunning) {
+        tick();
+      }
+    });
 
   } else {
     document.getElementById('pomodoro-bar')?.remove();
