@@ -18,7 +18,7 @@ function initPBConfig(tierCount) {
 
   if (tierCount === 5) {
     PB_CONFIG = {
-      DEFAULT_POINTS: 1,
+      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 50,
       TIERS: [
         ...baseTiers,
@@ -27,7 +27,7 @@ function initPBConfig(tierCount) {
     };
   } else if (tierCount === 6) {
     PB_CONFIG = {
-      DEFAULT_POINTS: 1,
+      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 60,
       TIERS: [
         ...baseTiers,
@@ -38,7 +38,7 @@ function initPBConfig(tierCount) {
   } else {
     // 7 Tiers (Default)
     PB_CONFIG = {
-      DEFAULT_POINTS: 1,
+      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 70,
       TIERS: [
         ...baseTiers,
@@ -496,7 +496,7 @@ function updateDailyProjections() {
 // ==========================================
 
 function extractPoints(text) {
-  if (!text) return 1;
+  if (!text) return 2; // Updated to default to 2
   // Robust global regex to catch points anywhere in title without relying on strictly end-of-string
   let match = text.match(/\{(\d+)\}/g);
   if (match && match.length > 0) {
@@ -504,7 +504,7 @@ function extractPoints(text) {
       const num = lastMatch.match(/\d+/)[0];
       return parseInt(num, 10);
   }
-  return 1;
+  return 2; // Updated to default to 2
 }
 
 // Global Click Listener
