@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GCal Extension: Mode Switcher",
-  "version": "3.8",
+  "version": "3.9",
   "description": "Choose between Daily PB Chaser and RPG Level Up modes.",
   "permissions": [
     "storage"
@@ -17,7 +17,7 @@
     {
       "matches": ["https://calendar.google.com/calendar/*"],
       "css": ["global.css"],
-      "js": ["level.js", "point.js", "soundOnly.js", "colorChanger.js", "pomodoro.js"]
+      "js": ["level.js", "point.js", "soundOnly.js", "colorChanger.js", "pomodoro.js", "focus-day-view.js"]
     },
     {
       "matches": ["https://trello.com/*"],

@@ -262,4 +262,4 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
   } else {
     document.getElementById('pomodoro-bar')?.remove();
   }
-});
+});;

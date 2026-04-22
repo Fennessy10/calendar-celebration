@@ -1,3 +1,4 @@
+(() => {
 console.log("Work Time Converter Loaded ⏰");
 
 // Convert points to time (every point = 10 mins)
@@ -61,3 +62,4 @@ observer.observe(document.body, {
 });
 
 console.log("✓ Work time converter active");
+})();
