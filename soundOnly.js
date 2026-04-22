@@ -7,14 +7,17 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
     // --- SOUND LOGIC ---
     const SOUND_VOLUME = 0.1;
 
-    function playTaskCompleteSound() {
-      const soundUrl = chrome.runtime.getURL('assets/plinker.mp3');
+    // Modified to accept a boolean determining if the major sound should play
+    function playTaskCompleteSound(isMajor) {
+      const file = isMajor ? 'assets/10-levels.mp3' : 'assets/plinker.mp3';
+      const soundUrl = chrome.runtime.getURL(file);
       const audio = new Audio(soundUrl);
       audio.volume = SOUND_VOLUME;
       audio.play().catch(e => console.error("Error playing task sound:", e));
     }
 
     // --- MAIN LOGIC ---
+    // Added `true` for event capturing like in point.js to ensure it fires reliably
     document.body.addEventListener('click', function(event) {
       // 1. Check for the original sidebar task list button
       const listButton = event.target.closest('button[data-completed="false"]');
@@ -22,12 +25,35 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       // 2. Check for the detailed view "Mark complete" button
       const detailButton = event.target.closest('button[aria-label="Mark complete"]');
       
+      const element = listButton || detailButton;
+      
       // If neither was clicked, stop the function
-      if (!listButton && !detailButton) return;
+      if (!element) return;
+
+      // 3. Extract the title (Reusing the robust logic from point.js)
+      let title = "";
+      let source = element.closest('[data-taskid]') || element.closest('[role="listitem"]') || element.closest('.kma42e');
+      
+      if(!source) {
+        let candidate = element.parentElement;
+        for(let i=0; i<4; i++) {
+          if(candidate && candidate.innerText && candidate.innerText.length > 3) { source = candidate; break; }
+          if(candidate) candidate = candidate.parentElement;
+        }
+      }
+
+      if(source) {
+        const h = source.querySelector('[role="heading"]');
+        title = h ? h.innerText : source.innerText;
+      }
+
+      // Clean the string and check if the first letter is Z (case-insensitive)
+      const cleanTitle = title.trim();
+      const startsWithZ = cleanTitle.toLowerCase().startsWith('z');
 
       // Just play the sound, no tracking
-      playTaskCompleteSound();
-    });
+      playTaskCompleteSound(startsWithZ);
+    }, true); 
 
   } // End of Sound Only mode check
 });
