@@ -2,6 +2,33 @@
 ;(() => {
     console.log("Focus Day View Loaded! 🎯 (Showing only completed + next task)");
 
+    let focusDayEnabled = true;
+
+    chrome.storage.sync.get(['focusDayEnabled'], (data) => {
+        if (data.focusDayEnabled !== undefined) {
+            focusDayEnabled = data.focusDayEnabled;
+        }
+        if (!focusDayEnabled) {
+            removeAllHiddenClasses();
+        }
+    });
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'sync' && changes.focusDayEnabled) {
+            focusDayEnabled = changes.focusDayEnabled.newValue;
+            if (!focusDayEnabled) {
+                removeAllHiddenClasses();
+            } else {
+                applyFocusMode();
+            }
+        }
+    });
+
+    function removeAllHiddenClasses() {
+        const taskChips = Array.from(document.querySelectorAll('.focus-hidden-task'));
+        taskChips.forEach(chip => chip.classList.remove('focus-hidden-task'));
+    }
+
     if (!document.getElementById('focus-day-styles')) {
         const style = document.createElement('style');
         style.id = 'focus-day-styles';
@@ -16,6 +43,8 @@
     }
 
     function applyFocusMode() {
+        if (!focusDayEnabled) return;
+
         const viewSwitcherText = document.querySelector('[jsname="V67aGc"]')?.textContent.trim().toLowerCase() || "";
         const isDayView = window.location.href.includes('/r/day') || viewSwitcherText === 'day';
 

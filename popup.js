@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPomodoro = document.getElementById('btn-pomodoro');
   const pbSettings = document.getElementById('pb-settings');
   const tierSelect = document.getElementById('pb-tier-select');
+  const toggleFocusDay = document.getElementById('toggle-focus-day');
 
   if (!btnPb || !btnRpg || !btnSound || !btnPomodoro) {
     console.error("Buttons not found in popup.html");
@@ -12,9 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 1. Load saved settings on startup
-  chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
+  chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'focusDayEnabled'], (data) => {
     const mode = data.extensionMode || 'pb'; // Default to PB
     tierSelect.value = data.pbTierCount || 7; // Default to 7 Tiers
+    toggleFocusDay.checked = data.focusDayEnabled !== false; // Default to true
     updateVisuals(mode);
   });
 
@@ -29,6 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newCount = parseInt(e.target.value, 10);
     chrome.storage.sync.set({ pbTierCount: newCount }, () => {
       reloadCalendarTab();
+    });
+  });
+
+  // 4. Change Handler for Focus Day View Toggle
+  toggleFocusDay.addEventListener('change', (e) => {
+    const isEnabled = e.target.checked;
+    chrome.storage.sync.set({ focusDayEnabled: isEnabled }, () => {
+      console.log(`Focus Day View enabled: ${isEnabled}`);
     });
   });
 
