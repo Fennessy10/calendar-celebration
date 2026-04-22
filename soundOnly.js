@@ -16,6 +16,15 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       audio.play().catch(e => console.error("Error playing task sound:", e));
     }
 
+    // --- CONFETTI LOGIC ---
+    function triggerConfetti() {
+      if (typeof window.confetti === 'function') {
+        window.confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, zIndex: 10000 });
+      } else if (typeof confetti === 'function') {
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, zIndex: 10000 });
+      }
+    }
+
     // --- MAIN LOGIC ---
     // Added `true` for event capturing like in point.js to ensure it fires reliably
     document.body.addEventListener('click', function(event) {
@@ -53,6 +62,12 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
       // Just play the sound, no tracking
       playTaskCompleteSound(startsWithZ);
+
+      // Trigger confetti if it starts with Z
+      if (startsWithZ) {
+        triggerConfetti();
+      }
+
     }, true); 
 
   } // End of Sound Only mode check
