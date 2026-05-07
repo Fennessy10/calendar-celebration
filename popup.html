@@ -81,7 +81,7 @@
     .title { font-size: 14px; font-weight: bold; }
     .desc { font-size: 11px; color: #9aa0a6; margin-top: 2px;}
 
-    /* PB Settings Panel */
+    /* Settings Panel */
     .settings-panel {
       background: #2d2e31;
       padding: 12px;
@@ -97,7 +97,7 @@
       margin-bottom: 8px; 
       font-weight: bold;
     }
-    .settings-panel select {
+    .settings-panel select, .settings-panel input[type="number"] {
       width: 100%;
       background: #202124;
       color: #e8eaed;
@@ -107,10 +107,32 @@
       outline: none;
       font-family: inherit;
       font-size: 12px;
+      box-sizing: border-box;
+    }
+    .settings-panel select {
       cursor: pointer;
     }
-    .settings-panel select:focus {
+    .settings-panel select:focus, .settings-panel input[type="number"]:focus {
       border-color: #38ef7d;
+    }
+
+    /* Color Picker Styles */
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid #5f6368;
+      border-radius: 4px;
     }
 
     /* Switch styles */
@@ -197,7 +219,27 @@
     </div>
   </div>
 
+  <!-- Shared Settings for point-based modes -->
+  <div class="settings-panel" id="global-settings" style="display: block;">
+    <label for="default-points-input">Default Task Points (If {x} unused)</label>
+    <input type="number" id="default-points-input" min="1" max="100" value="2">
+  </div>
+
+  <!-- PB Specific Settings -->
   <div class="settings-panel" id="pb-settings">
+    <label for="pb-color-select">Bar Color Theme</label>
+    <select id="pb-color-select" style="margin-bottom: 8px;">
+      <option value="green">Green (Default)</option>
+      <option value="blue">Blue</option>
+      <option value="orange">Orange</option>
+      <option value="custom">Custom...</option>
+    </select>
+
+    <div id="custom-color-wrapper" style="display: none; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <input type="color" id="pb-custom-color" value="#a855f7">
+      <label for="pb-custom-color" style="margin-bottom: 0; font-weight: normal; color: #e8eaed; cursor: pointer;">Pick Base Hex</label>
+    </div>
+
     <label for="pb-tier-select">PB Mode Settings</label>
     <select id="pb-tier-select">
       <option value="5">5 Tiers (God-Like at 50)</option>

@@ -5,46 +5,59 @@
 const SOUND_VOLUME = 0.2;
 let CURRENT_MODE = 'pb'; // 'pb' or 'rpg'
 let CURRENT_DAILY_SCORE_MEM = 0; // Tracks the daily score memory for projection math
+let DEFAULT_POINTS = 2; // Customizable global default points
 
 let PB_CONFIG = {};
 
-function initPBConfig(tierCount) {
+function initPBConfig(tierCount, colorTheme = 'green', customHex = '#a855f7') {
+  let colors;
+  if (colorTheme === 'blue') {
+    colors = ['#0a3069', '#005cc5', '#218bff', '#38bdf8', '#7dd3fc', '#bae6fd', '#58a6ff'];
+  } else if (colorTheme === 'orange') {
+    colors = ['#5a1e02', '#9a360e', '#d95c18', '#f66a0a', '#fb8c00', '#ffb74d', '#ff9800'];
+  } else if (colorTheme === 'custom') {
+    // Generates a brightness/opacity scale automatically from the user's custom hex!
+    colors = [
+      customHex + '40', customHex + '60', customHex + '80', customHex + 'A0', customHex + 'C0', customHex + 'E0', customHex
+    ];
+  } else {
+    // Default green
+    colors = ['#0e4429', '#006d32', '#26a641', '#39d353', '#4ae564', '#5cf575', '#6bff82'];
+  }
+
   const baseTiers = [
-    { min: 0, max: 19, name: "Pathetic", color: '#0e4429' },          // Very dark green
-    { min: 20, max: 29, name: "Underwhelming", color: '#006d32' },   // Dark green
-    { min: 30, max: 39, name: "Solid", color: '#26a641' },           // Medium green
-    { min: 40, max: 49, name: "Masterful", color: '#39d353' }        // Bright green
+    { min: 0, max: 19, name: "Pathetic", color: colors[0] },          
+    { min: 20, max: 29, name: "Underwhelming", color: colors[1] },   
+    { min: 30, max: 39, name: "Solid", color: colors[2] },           
+    { min: 40, max: 49, name: "Masterful", color: colors[3] }        
   ];
 
   if (tierCount === 5) {
     PB_CONFIG = {
-      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 50,
       TIERS: [
         ...baseTiers,
-        { min: 50, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+        { min: 50, max: Infinity, name: "God-Like", color: colors[6], isGodLike: true }
       ]
     };
   } else if (tierCount === 6) {
     PB_CONFIG = {
-      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 60,
       TIERS: [
         ...baseTiers,
-        { min: 50, max: 59, name: "Unstoppable", color: '#4ae564' },
-        { min: 60, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+        { min: 50, max: 59, name: "Unstoppable", color: colors[4] },
+        { min: 60, max: Infinity, name: "God-Like", color: colors[6], isGodLike: true }
       ]
     };
   } else {
     // 7 Tiers (Default)
     PB_CONFIG = {
-      DEFAULT_POINTS: 2,
       MAX_BAR_SCORE: 70,
       TIERS: [
         ...baseTiers,
-        { min: 50, max: 59, name: "Unstoppable", color: '#4ae564' },
-        { min: 60, max: 69, name: "Legendary", color: '#5cf575' },
-        { min: 70, max: Infinity, name: "God-Like", color: '#6bff82', isGodLike: true }
+        { min: 50, max: 59, name: "Unstoppable", color: colors[4] },
+        { min: 60, max: 69, name: "Legendary", color: colors[5] },
+        { min: 70, max: Infinity, name: "God-Like", color: colors[6], isGodLike: true }
       ]
     };
   }
@@ -75,7 +88,7 @@ function triggerConfetti() {
 // ==========================================
 
 function initPBMode() {
-  console.log(`Daily PB Chaser Mode Activated 🏆 (Max Tiers: ${PB_CONFIG.TIERS.length})`);
+  console.log(`Daily PB Chaser Mode Activated 🏆 (Max Tiers: ${PB_CONFIG.TIERS.length}, Default Points: ${DEFAULT_POINTS})`);
   injectPBStyles();
   createPBTracker();
   loadAndResetPBIfNeeded();
@@ -113,11 +126,6 @@ function injectPBStyles() {
     .pb-score-wrapper { display: flex; align-items: center; gap: 8px; }
     .pb-score-area { font-size: 20px; font-weight: bold; color: #e8eaed; transition: color 0.3s, text-shadow 0.3s; }
 
-    .god-like-text {
-      color: #6bff82 !important; 
-      text-shadow: 0 0 10px rgba(107, 255, 130, 0.4);
-    }
-
     .pb-icon-btn {
       font-size: 14px; color: #9aa0a6; background: transparent;
       border: 1px solid #5f6368; border-radius: 4px; width: 24px; height: 24px;
@@ -136,10 +144,6 @@ function injectPBStyles() {
     .pb-bar-fill {
       height: 100%; width: 0%; border-radius: 5px 0 0 5px; /* Square end on the right side */
       transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.6s ease, box-shadow 0.6s ease, border-radius 0.1s;
-    }
-    
-    .god-like-bar { 
-      box-shadow: 0 0 12px rgba(107, 255, 130, 0.8); 
     }
 
     /* Milestone Lines */
@@ -232,16 +236,19 @@ function updatePBUI(dailyScore) {
   
   targetDisplay.innerText = currentTier.name;
   
-  // Reset classes
-  scoreDisplay.classList.remove('god-like-text');
-  targetDisplay.classList.remove('god-like-text');
-  barFill.classList.remove('god-like-bar');
+  // Reset inline god-like properties so they switch properly
+  scoreDisplay.style.textShadow = 'none';
+  targetDisplay.style.textShadow = 'none';
+  barFill.style.boxShadow = 'none';
 
   // Apply specific colors based on tier
   if (currentTier.isGodLike) {
-      scoreDisplay.classList.add('god-like-text');
-      targetDisplay.classList.add('god-like-text');
-      barFill.classList.add('god-like-bar');
+      scoreDisplay.style.color = currentTier.color;
+      targetDisplay.style.color = currentTier.color;
+      // Inject glowing custom shadows using hex transparency
+      scoreDisplay.style.textShadow = `0 0 10px ${currentTier.color}66`;
+      targetDisplay.style.textShadow = `0 0 10px ${currentTier.color}66`;
+      barFill.style.boxShadow = `0 0 12px ${currentTier.color}cc`;
   } else if (dailyScore >= 30) {
       scoreDisplay.style.color = '#ffffff';
       targetDisplay.style.color = '#e8eaed';
@@ -496,7 +503,7 @@ function updateDailyProjections() {
 // ==========================================
 
 function extractPoints(text) {
-  if (!text) return 2; // Updated to default to 2
+  if (!text) return DEFAULT_POINTS; // Falls back to user's defined default points setting
   // Robust global regex to catch points anywhere in title without relying on strictly end-of-string
   let match = text.match(/\{(\d+)\}/g);
   if (match && match.length > 0) {
@@ -504,7 +511,7 @@ function extractPoints(text) {
       const num = lastMatch.match(/\d+/)[0];
       return parseInt(num, 10);
   }
-  return 2; // Updated to default to 2
+  return DEFAULT_POINTS; // Falls back to user's defined default points setting
 }
 
 // Global Click Listener
@@ -544,12 +551,18 @@ document.body.addEventListener('click', function(event) {
 }, true);
 
 // Init
-chrome.storage.sync.get(['extensionMode', 'pbTierCount'], (data) => {
+chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'defaultPoints', 'pbColorTheme', 'pbCustomColorHex'], (data) => {
   CURRENT_MODE = data.extensionMode || 'pb';
-  const tierCount = data.pbTierCount || 7; // Default to 7 tiers
+  const tierCount = data.pbTierCount || 7;
+  const colorTheme = data.pbColorTheme || 'green';
+  const customHex = data.pbCustomColorHex || '#a855f7';
+  
+  if (data.defaultPoints !== undefined) {
+      DEFAULT_POINTS = parseInt(data.defaultPoints, 10);
+  }
 
   if (CURRENT_MODE === 'pb') {
-    initPBConfig(tierCount);
+    initPBConfig(tierCount, colorTheme, customHex);
     initPBMode();
   } else {
     document.getElementById('pb-ui-root')?.remove();
