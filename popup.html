@@ -182,6 +182,80 @@
       padding-top: 15px;
       border-top: 1px solid #5f6368;
     }
+
+    /* Tags UI Styles */
+    .tag-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .tag-row input[type="text"] {
+      flex-grow: 1;
+      background: #202124;
+      color: #e8eaed;
+      border: 1px solid #5f6368;
+      border-radius: 4px;
+      padding: 6px;
+      outline: none;
+      font-family: inherit;
+      font-size: 12px;
+      width: 100px;
+    }
+    .tag-row input[type="text"]:focus {
+      border-color: #38bdf8;
+    }
+    .add-btn {
+      background: #38bdf8;
+      color: #202124;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .add-btn:hover {
+      background: #0284c7;
+      color: white;
+    }
+    .tag-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #2d2e31;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .tag-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tag-color-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .tag-name {
+      font-size: 12px;
+      color: #e8eaed;
+      font-weight: bold;
+    }
+    .tag-delete {
+      cursor: pointer;
+      color: #9aa0a6;
+      font-size: 14px;
+      background: none;
+      border: none;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .tag-delete:hover {
+      color: #ff5e7e;
+    }
   </style>
 </head>
 <body>
@@ -257,6 +331,24 @@
       <input type="checkbox" id="toggle-focus-day">
       <span class="slider"></span>
     </label>
+  </div>
+
+  <!-- NEW TAGS UI SECTION -->
+  <div style="margin-top: 20px; border-top: 1px solid #5f6368; padding-top: 15px;">
+    <div class="text-container">
+      <div class="title">Task Tags</div>
+      <div class="desc">Color tasks by keyword (e.g. #work). First tag dictates the color.</div>
+    </div>
+    
+    <div class="tag-row">
+      <input type="color" id="new-tag-color" value="#38bdf8" title="Tag Color">
+      <input type="text" id="new-tag-name" placeholder="Keyword...">
+      <button class="add-btn" id="add-tag-btn">Add</button>
+    </div>
+
+    <div id="tags-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <!-- Dynamic tags will be loaded here -->
+    </div>
   </div>
 
   <script src="popup.js"></script>

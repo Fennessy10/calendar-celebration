@@ -6,6 +6,9 @@ const SOUND_VOLUME = 0.2;
 let CURRENT_MODE = 'pb'; // 'pb' or 'rpg'
 let CURRENT_DAILY_SCORE_MEM = 0; // Tracks the daily score memory for projection math
 let DEFAULT_POINTS = 2; // Customizable global default points
+let USER_TAGS = []; // Stores user custom tags from storage
+let APPLIED_TAGS = {}; // Stores eventId -> [tag1, tag2] locally (Manually added tags)
+let REMOVED_TAGS = {}; // Stores eventId -> [tag1, tag2] locally (Manually excluded auto-tags)
 
 let PB_CONFIG = {};
 
@@ -92,6 +95,7 @@ function initPBMode() {
   injectPBStyles();
   createPBTracker();
   loadAndResetPBIfNeeded();
+  initTagsContextMenu(); // Initialize the custom right-click menu
   
   // Start the projection loop
   setInterval(updateDailyProjections, 2000);
@@ -170,6 +174,48 @@ function injectPBStyles() {
       line-height: 1;
       font-family: 'Google Sans', sans-serif;
       z-index: 10;
+    }
+    
+    /* Tags Context Menu Styles */
+    #pb-context-menu {
+      position: absolute;
+      display: none;
+      z-index: 10000;
+      background: #202124;
+      border: 1px solid #5f6368;
+      border-radius: 8px;
+      padding: 5px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      font-family: 'Google Sans', Roboto, sans-serif;
+      min-width: 150px;
+    }
+    .pb-context-title {
+      padding: 4px 15px 8px;
+      font-size: 11px;
+      color: #9aa0a6;
+      border-bottom: 1px solid #3c4043;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .pb-context-item {
+      padding: 8px 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #e8eaed;
+      font-size: 13px;
+      transition: background 0.1s;
+    }
+    .pb-context-item:hover {
+      background: #3c4043;
+    }
+    .pb-context-color {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .pb-context-check {
+      color: #38bdf8; font-weight: bold; margin-left: auto; font-size: 14px;
     }
   `;
   document.head.appendChild(style);
@@ -347,6 +393,141 @@ function handlePBTaskComplete(points) {
   });
 }
 
+// ==========================================
+//           TAGS CONTEXT MENU UI
+// ==========================================
+
+function initTagsContextMenu() {
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'pb-context-menu';
+    document.body.appendChild(contextMenu);
+
+    let contextMenuTargetId = null;
+
+    // Listen for right clicks anywhere on the document (use capture phase to beat Google Calendar)
+    document.addEventListener('contextmenu', (e) => {
+        // Find if they clicked a task chip
+        const taskChip = e.target.closest('[data-eventid^="tasks_"]');
+        
+        if (taskChip && CURRENT_MODE === 'pb') {
+            e.preventDefault(); // Stop standard browser right-click menu
+            e.stopPropagation(); // Stop Google Calendar's scripts from seeing the click
+            e.stopImmediatePropagation(); 
+            
+            contextMenuTargetId = taskChip.getAttribute('data-eventid');
+
+            // Extract title to check for auto-assigned tags
+            let title = "";
+            const titleSpan = taskChip.querySelector('.WBi6vc');
+            const hiddenSpan = taskChip.querySelector('.XuJrye');
+            if (titleSpan) title = titleSpan.textContent;
+            else if (hiddenSpan) title = hiddenSpan.textContent;
+            else title = taskChip.innerText;
+
+            // Build menu dynamically based on current user tags
+            contextMenu.innerHTML = '';
+            
+            if (!USER_TAGS || USER_TAGS.length === 0) {
+                contextMenu.innerHTML = '<div style="padding: 8px 15px; color: #9aa0a6; font-size: 12px;">No tags defined</div>';
+            } else {
+                const titleDiv = document.createElement('div');
+                titleDiv.innerText = 'Toggle Tags';
+                titleDiv.className = 'pb-context-title';
+                contextMenu.appendChild(titleDiv);
+
+                USER_TAGS.forEach(tag => {
+                    const item = document.createElement('div');
+                    item.className = 'pb-context-item';
+
+                    // Determine current application status
+                    const isAutoNatively = title && title.toLowerCase().includes(tag.keyword.toLowerCase());
+                    const isManuallyRemoved = REMOVED_TAGS[contextMenuTargetId] && REMOVED_TAGS[contextMenuTargetId].includes(tag.keyword);
+                    const isAutoApplied = isAutoNatively && !isManuallyRemoved;
+                    const isManuallyApplied = APPLIED_TAGS[contextMenuTargetId] && APPLIED_TAGS[contextMenuTargetId].includes(tag.keyword);
+                    const isApplied = isManuallyApplied || isAutoApplied;
+
+                    item.innerHTML = `
+                        <div class="pb-context-color" style="background-color: ${tag.color};"></div>
+                        <span style="flex-grow: 1">${tag.keyword}${isAutoNatively ? ' (auto)' : ''}</span>
+                        <span class="pb-context-check">${isApplied ? '✓' : ''}</span>
+                    `;
+
+                    item.onclick = (event) => {
+                        event.stopPropagation(); // Keep menu open when toggling
+
+                        if (!APPLIED_TAGS[contextMenuTargetId]) APPLIED_TAGS[contextMenuTargetId] = [];
+                        if (!REMOVED_TAGS[contextMenuTargetId]) REMOVED_TAGS[contextMenuTargetId] = [];
+
+                        // Re-evaluate current state to handle multiple clicks while menu is open
+                        let currentlyManuallyApplied = APPLIED_TAGS[contextMenuTargetId].includes(tag.keyword);
+                        let currentlyManuallyRemoved = REMOVED_TAGS[contextMenuTargetId].includes(tag.keyword);
+                        let currentlyAutoApplied = isAutoNatively && !currentlyManuallyRemoved;
+                        let currentlyApplied = currentlyManuallyApplied || currentlyAutoApplied;
+
+                        if (currentlyApplied) {
+                            // Remove logic
+                            if (currentlyManuallyApplied) {
+                                APPLIED_TAGS[contextMenuTargetId] = APPLIED_TAGS[contextMenuTargetId].filter(k => k !== tag.keyword);
+                            }
+                            if (isAutoNatively && !REMOVED_TAGS[contextMenuTargetId].includes(tag.keyword)) {
+                                REMOVED_TAGS[contextMenuTargetId].push(tag.keyword);
+                            }
+                            currentlyApplied = false;
+                        } else {
+                            // Add logic
+                            if (currentlyManuallyRemoved) {
+                                REMOVED_TAGS[contextMenuTargetId] = REMOVED_TAGS[contextMenuTargetId].filter(k => k !== tag.keyword);
+                            }
+                            if (!isAutoNatively && !APPLIED_TAGS[contextMenuTargetId].includes(tag.keyword)) {
+                                APPLIED_TAGS[contextMenuTargetId].push(tag.keyword);
+                            }
+                            currentlyApplied = true;
+                        }
+
+                        // Save to storage immediately
+                        chrome.storage.sync.set({ appliedTags: APPLIED_TAGS, removedTags: REMOVED_TAGS }, () => {
+                            // Re-render the menu to show updated checkmarks
+                            const checkSpan = item.querySelector('.pb-context-check');
+                            if(checkSpan) {
+                                checkSpan.innerText = currentlyApplied ? '✓' : '';
+                            }
+                            updateDailyProjections(); // Force immediate background UI recoloring
+                        });
+                    };
+                    contextMenu.appendChild(item);
+                });
+            }
+
+            // Position menu where mouse clicked
+            // Ensure menu doesn't flow off screen
+            let posX = e.pageX;
+            let posY = e.pageY;
+            
+            contextMenu.style.display = 'block';
+            
+            if (posX + contextMenu.offsetWidth > window.innerWidth) {
+                posX = window.innerWidth - contextMenu.offsetWidth - 10;
+            }
+            if (posY + contextMenu.offsetHeight > window.innerHeight) {
+                posY = window.innerHeight - contextMenu.offsetHeight - 10;
+            }
+
+            contextMenu.style.left = `${posX}px`;
+            contextMenu.style.top = `${posY}px`;
+        } else {
+            // Clicked outside a task, hide menu
+            contextMenu.style.display = 'none';
+        }
+    }, true); // <-- CRITICAL: 'true' enables capture phase to trigger before Google Calendar
+
+    // Hide context menu on normal left clicks anywhere
+    document.addEventListener('click', (e) => {
+        if (contextMenu.style.display === 'block' && !e.target.closest('#pb-context-menu')) {
+            contextMenu.style.display = 'none';
+        }
+    }, true);
+}
+
 // -----------------------------------------------------
 // HIGHLY ROBUST PROJECTION LOGIC 
 // Uses data-datekey to prevent missing completed tasks
@@ -412,6 +593,61 @@ function updateDailyProjections() {
 
   taskChips.forEach(chip => {
     const eventId = chip.getAttribute('data-eventid');
+    
+    // Attempt to extract title for points parsing
+    let title = "";
+    const titleSpan = chip.querySelector('.WBi6vc');
+    const hiddenSpan = chip.querySelector('.XuJrye');
+    
+    if (titleSpan) title = titleSpan.textContent;
+    else if (hiddenSpan) title = hiddenSpan.textContent;
+    else title = chip.innerText;
+
+    // --- APPLY CUSTOM TAG COLORS ---
+    let matchedTag = null;
+
+    // 1. Check if a tag was applied directly via Right-Click Menu
+    if (APPLIED_TAGS[eventId] && APPLIED_TAGS[eventId].length > 0) {
+      // The first tag manually applied dictates the color
+      const firstTagKeyword = APPLIED_TAGS[eventId][0];
+      matchedTag = USER_TAGS.find(t => t.keyword === firstTagKeyword);
+    }
+    
+    // 2. Fallback to title keywords if no local tag is explicitly applied via menu
+    if (!matchedTag && USER_TAGS && USER_TAGS.length > 0 && title) {
+      const lowerTitle = title.toLowerCase();
+      
+      // Find first tag that is in the title AND NOT explicitly removed via the context menu
+      matchedTag = USER_TAGS.find(tag => {
+          const isRemoved = REMOVED_TAGS[eventId] && REMOVED_TAGS[eventId].includes(tag.keyword);
+          return lowerTitle.includes(tag.keyword.toLowerCase()) && !isRemoved;
+      });
+    }
+
+    // Apply or Restore Colors target strictly the color bar/dot indicator
+    let targetEl = chip.querySelector('.pmUZFe'); 
+
+    if (targetEl) {
+        // Store original background if not stored yet, to allow removal of tags
+        if (!targetEl.hasAttribute('data-original-bg')) {
+            targetEl.dataset.originalBg = targetEl.style.backgroundColor || '';
+            targetEl.dataset.originalBorder = targetEl.style.borderColor || '';
+        }
+
+        if (matchedTag) {
+          targetEl.style.backgroundColor = matchedTag.color;
+          targetEl.style.borderColor = matchedTag.color;
+        } else {
+          // Restore original native color if tags were stripped away
+          if (targetEl.hasAttribute('data-original-bg')) {
+              targetEl.style.backgroundColor = targetEl.dataset.originalBg;
+          }
+          if (targetEl.hasAttribute('data-original-border')) {
+              targetEl.style.borderColor = targetEl.dataset.originalBorder;
+          }
+        }
+    }
+
     if (seenTasks.has(eventId)) return;
 
     let targetDayInfo = null;
@@ -551,7 +787,7 @@ document.body.addEventListener('click', function(event) {
 }, true);
 
 // Init
-chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'defaultPoints', 'pbColorTheme', 'pbCustomColorHex'], (data) => {
+chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'defaultPoints', 'pbColorTheme', 'pbCustomColorHex', 'taskTags', 'appliedTags', 'removedTags'], (data) => {
   CURRENT_MODE = data.extensionMode || 'pb';
   const tierCount = data.pbTierCount || 7;
   const colorTheme = data.pbColorTheme || 'green';
@@ -559,6 +795,18 @@ chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'defaultPoints', 'pbCol
   
   if (data.defaultPoints !== undefined) {
       DEFAULT_POINTS = parseInt(data.defaultPoints, 10);
+  }
+  
+  if (data.taskTags !== undefined) {
+      USER_TAGS = data.taskTags;
+  }
+  
+  if (data.appliedTags !== undefined) {
+      APPLIED_TAGS = data.appliedTags;
+  }
+
+  if (data.removedTags !== undefined) {
+      REMOVED_TAGS = data.removedTags;
   }
 
   if (CURRENT_MODE === 'pb') {

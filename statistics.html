@@ -211,7 +211,7 @@
       box-shadow: inset 0 0 0 3px #8ab4f8, 0 0 12px rgba(107, 255, 130, 0.4);
     }
 
-    /* Chart Area */
+    /* Chart & Tags Area */
     .chart-controls {
       display: flex;
       justify-content: space-between;
@@ -241,6 +241,34 @@
       margin-bottom: 40px;
     }
     canvas { width: 100%; height: 100%; }
+
+    /* Tags Breakdown Area */
+    .tag-stats-wrapper {
+      width: 100%; max-width: 800px;
+      background: #2d2e31; padding: 20px;
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 40px; box-sizing: border-box;
+    }
+    .tag-stat-row {
+      display: flex; align-items: center; gap: 15px; margin-bottom: 12px;
+    }
+    .tag-stat-row:last-child {
+      margin-bottom: 0;
+    }
+    .tag-stat-label {
+      width: 120px; font-size: 13px; font-weight: bold; color: #e8eaed;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .tag-stat-bar-bg {
+      flex-grow: 1; height: 12px; background: #161b22;
+      border-radius: 6px; overflow: hidden; position: relative;
+    }
+    .tag-stat-bar-fill {
+      height: 100%; border-radius: 6px; transition: width 0.5s ease;
+    }
+    .tag-stat-score {
+      width: 50px; text-align: right; font-size: 14px; color: #9aa0a6; font-weight: bold;
+    }
 
     /* Danger Zone */
     .danger-zone {
@@ -299,7 +327,7 @@
   </div>
 
   <div class="chart-controls">
-    <h2>Point History</h2>
+    <h2>Data Overview</h2>
     <div class="chart-filters">
       <button class="filter-btn active" data-range="all">All-Time</button>
       <button class="filter-btn" data-range="year">Year</button>
@@ -310,6 +338,13 @@
 
   <div class="chart-container">
     <canvas id="historyChart"></canvas>
+  </div>
+
+  <div class="chart-controls" style="margin-top: 10px;">
+    <h2>Tag Breakdown (Points)</h2>
+  </div>
+  <div class="tag-stats-wrapper" id="tagStatsWrapper">
+    <div style="text-align: center; color: #9aa0a6; font-size: 13px;">No tag data for this range.</div>
   </div>
 
   <div class="danger-zone">

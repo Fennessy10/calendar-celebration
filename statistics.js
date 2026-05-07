@@ -1,4 +1,5 @@
 let globalGraphData = [];
+let globalTaskTags = [];
 let calendarDate = new Date();
 
 // Helper to get local date string matching our extension logic
@@ -67,10 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('currentDate').innerText = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     // Load Data
-    chrome.storage.sync.get(['dailyScore', 'personalBest', 'history', 'lastActiveDate'], (data) => {
+    chrome.storage.sync.get(['dailyScore', 'dailyTagScores', 'personalBest', 'history', 'lastActiveDate', 'taskTags'], (data) => {
         const history = data.history || [];
         const dailyScore = data.dailyScore || 0;
+        const dailyTagScores = data.dailyTagScores || {};
         const lastDate = data.lastActiveDate;
+        
+        globalTaskTags = data.taskTags || [];
 
         // Populate Main Cards
         document.getElementById('allTimePB').innerText = data.personalBest || 0;
@@ -86,12 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
                  globalGraphData.push({ 
                      date: 'Today', 
                      score: dailyScore, 
+                     tags: { ...dailyTagScores },
                      rawDate: new Date() 
                 });
              }
         } else {
             globalGraphData[globalGraphData.length - 1].score = dailyScore;
             globalGraphData[globalGraphData.length - 1].date = 'Today';
+            globalGraphData[globalGraphData.length - 1].tags = { ...dailyTagScores };
             globalGraphData[globalGraphData.length - 1].rawDate = new Date();
         }
 
@@ -107,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Initial Renders
         renderCalendar();
-        renderGraph('all');
+        renderDataView('all');
     });
 
     // --- CALENDAR CONTROLS ---
@@ -126,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-            renderGraph(e.target.dataset.range);
+            renderDataView(e.target.dataset.range);
         });
     });
 
@@ -224,8 +230,8 @@ function renderCalendar() {
     }
 }
 
-// --- GRAPH RENDERER ---
-function renderGraph(range) {
+// --- DATA RENDERER (Chart + Tags) ---
+function renderDataView(range) {
     const now = new Date();
     const msPerDay = 24 * 60 * 60 * 1000;
     
@@ -241,6 +247,7 @@ function renderGraph(range) {
     });
 
     drawChart(filteredData);
+    renderTagStats(filteredData);
 }
 
 function drawChart(data) {
@@ -341,5 +348,51 @@ function drawChart(data) {
              if (label.length > 5 && label !== 'Today') label = label.substring(5);
              ctx.fillText(label, x, height - 15);
         }
+    });
+}
+
+function renderTagStats(data) {
+    const container = document.getElementById('tagStatsWrapper');
+    container.innerHTML = '';
+
+    const tagTotals = {};
+    let hasTagData = false;
+
+    // Aggregate tags for the selected range
+    data.forEach(point => {
+        if (point.tags) {
+            Object.entries(point.tags).forEach(([tagKeyword, points]) => {
+                tagTotals[tagKeyword] = (tagTotals[tagKeyword] || 0) + points;
+                hasTagData = true;
+            });
+        }
+    });
+
+    if (!hasTagData) {
+        container.innerHTML = '<div style="text-align: center; color: #9aa0a6; font-size: 13px;">No tag data recorded for this range.</div>';
+        return;
+    }
+
+    // Sort heavily used tags first
+    const sortedTags = Object.entries(tagTotals).sort((a, b) => b[1] - a[1]);
+    const maxPoints = sortedTags[0][1];
+
+    sortedTags.forEach(([tagKeyword, points]) => {
+        const tagDef = globalTaskTags.find(t => t.keyword === tagKeyword);
+        const color = tagDef ? tagDef.color : '#5f6368'; // Fallback to grey if a tag was deleted
+
+        const pct = Math.max((points / maxPoints) * 100, 2); // Minimum 2% width so it's visible
+
+        const row = document.createElement('div');
+        row.className = 'tag-stat-row';
+        row.innerHTML = `
+            <div class="tag-stat-label" title="${tagKeyword}">${tagKeyword}</div>
+            <div class="tag-stat-bar-bg">
+                <div class="tag-stat-bar-fill" style="width: ${pct}%; background-color: ${color}; box-shadow: 0 0 8px ${color}66;"></div>
+            </div>
+            <div class="tag-stat-score">${points}</div>
+        `;
+        
+        container.appendChild(row);
     });
 }

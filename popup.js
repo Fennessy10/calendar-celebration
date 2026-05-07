@@ -12,13 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const defaultPointsInput = document.getElementById('default-points-input');
   const toggleFocusDay = document.getElementById('toggle-focus-day');
 
-  if (!btnPb || !btnRpg || !btnSound || !btnPomodoro) {
-    console.error("Buttons not found in popup.html");
-    return;
-  }
+  // Tag UI Elements
+  const newTagColor = document.getElementById('new-tag-color');
+  const newTagName = document.getElementById('new-tag-name');
+  const addTagBtn = document.getElementById('add-tag-btn');
+  const tagsList = document.getElementById('tags-list');
+  let currentTags = [];
 
   // 1. Load saved settings on startup
-  chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'pbColorTheme', 'pbCustomColorHex', 'focusDayEnabled', 'defaultPoints'], (data) => {
+  chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'pbColorTheme', 'pbCustomColorHex', 'focusDayEnabled', 'defaultPoints', 'taskTags'], (data) => {
     const mode = data.extensionMode || 'pb';
     tierSelect.value = data.pbTierCount || 7;
     colorSelect.value = data.pbColorTheme || 'green';
@@ -30,8 +32,67 @@ document.addEventListener('DOMContentLoaded', () => {
       customColorWrapper.style.display = 'flex';
     }
     
+    currentTags = data.taskTags || [];
+    renderTags();
+
     updateVisuals(mode);
   });
+
+  // --- TAGS LOGIC ---
+  addTagBtn.addEventListener('click', () => {
+    const keyword = newTagName.value.trim();
+    const color = newTagColor.value;
+
+    if (!keyword) return;
+
+    // Prevent duplicates
+    if (currentTags.find(t => t.keyword.toLowerCase() === keyword.toLowerCase())) {
+      alert('Tag already exists!');
+      return;
+    }
+
+    currentTags.push({ keyword, color });
+    saveTags();
+    newTagName.value = ''; // Reset input
+  });
+
+  function renderTags() {
+    tagsList.innerHTML = '';
+    
+    if (currentTags.length === 0) {
+      tagsList.innerHTML = `<div style="font-size:11px; color:#9aa0a6; text-align:center; padding: 4px;">No tags added yet.</div>`;
+      return;
+    }
+
+    currentTags.forEach((tag, index) => {
+      const el = document.createElement('div');
+      el.className = 'tag-item';
+      el.innerHTML = `
+        <div class="tag-item-left">
+          <div class="tag-color-swatch" style="background-color: ${tag.color};"></div>
+          <div class="tag-name">${tag.keyword}</div>
+        </div>
+        <button class="tag-delete" data-index="${index}">×</button>
+      `;
+      tagsList.appendChild(el);
+    });
+
+    // Bind delete buttons
+    document.querySelectorAll('.tag-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'), 10);
+        currentTags.splice(idx, 1);
+        saveTags();
+      });
+    });
+  }
+
+  function saveTags() {
+    chrome.storage.sync.set({ taskTags: currentTags }, () => {
+      renderTags();
+      reloadCalendarTab();
+    });
+  }
 
   // 2. Click Handlers for Modes
   btnPb.addEventListener('click', () => handleSelection('pb'));
