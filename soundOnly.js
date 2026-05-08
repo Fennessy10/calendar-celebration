@@ -60,13 +60,11 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
       const cleanTitle = title.trim();
       const startsWithZ = cleanTitle.toLowerCase().startsWith('z');
 
-      // Just play the sound, no tracking
+      // Play the sound (Z tasks get the major sound, all others get the standard plink)
       playTaskCompleteSound(startsWithZ);
 
-      // Trigger confetti if it starts with Z
-      if (startsWithZ) {
-        triggerConfetti();
-      }
+      // Trigger confetti on EVERY completed task
+      triggerConfetti();
 
     }, true); 
 
