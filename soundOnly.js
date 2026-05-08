@@ -9,7 +9,7 @@ chrome.storage.sync.get(['extensionMode'], (result) => {
 
     // Modified to accept a boolean determining if the major sound should play
     function playTaskCompleteSound(isMajor) {
-      const file = isMajor ? 'assets/10-levels.mp3' : 'assets/plinker.mp3';
+      const file = isMajor ? 'assets/10-levels.mp3' : 'assets/level_up.mp3';
       const soundUrl = chrome.runtime.getURL(file);
       const audio = new Audio(soundUrl);
       audio.volume = SOUND_VOLUME;
