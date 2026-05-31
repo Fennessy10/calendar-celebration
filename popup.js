@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSound = document.getElementById('btn-sound');
   const btnPomodoro = document.getElementById('btn-pomodoro');
   const pbSettings = document.getElementById('pb-settings');
+  const colorSettings = document.getElementById('color-settings');
   const globalSettings = document.getElementById('global-settings');
   const tierSelect = document.getElementById('pb-tier-select');
   const colorSelect = document.getElementById('pb-color-select');
@@ -166,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnSound.classList.remove('active', 'sound');
       btnPomodoro.classList.remove('active', 'pomodoro');
       pbSettings.style.display = 'block'; // Show PB Settings
+      colorSettings.style.display = 'block'; // Show Color Theme Settings
       globalSettings.style.display = 'block'; // Show general point settings
     } else if (mode === 'rpg') {
       btnRpg.classList.add('active', 'rpg');
@@ -173,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnSound.classList.remove('active', 'sound');
       btnPomodoro.classList.remove('active', 'pomodoro');
       pbSettings.style.display = 'none'; // Hide PB Settings
+      colorSettings.style.display = 'none'; // Hide Color Theme Settings
       globalSettings.style.display = 'block'; // Show general point settings for RPG
     } else if (mode === 'sound') {
       btnSound.classList.add('active', 'sound');
@@ -180,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRpg.classList.remove('active', 'rpg');
       btnPomodoro.classList.remove('active', 'pomodoro');
       pbSettings.style.display = 'none'; // Hide PB Settings
+      colorSettings.style.display = 'block'; // Show Color Theme Settings for Sound Only
       globalSettings.style.display = 'none'; // Hide general point settings
     } else if (mode === 'pomodoro') {
       btnPomodoro.classList.add('active', 'pomodoro');
@@ -187,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRpg.classList.remove('active', 'rpg');
       btnSound.classList.remove('active', 'sound');
       pbSettings.style.display = 'none'; // Hide PB Settings
+      colorSettings.style.display = 'none'; // Hide Color Theme Settings
       globalSettings.style.display = 'none'; // Hide general point settings
     }
   }

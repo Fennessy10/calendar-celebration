@@ -409,7 +409,7 @@ function initTagsContextMenu() {
         // Find if they clicked a task chip
         const taskChip = e.target.closest('[data-eventid^="tasks_"]');
         
-        if (taskChip && CURRENT_MODE === 'pb') {
+        if (taskChip && (CURRENT_MODE === 'pb' || CURRENT_MODE === 'sound')) {
             e.preventDefault(); // Stop standard browser right-click menu
             e.stopPropagation(); // Stop Google Calendar's scripts from seeing the click
             e.stopImmediatePropagation(); 
@@ -533,7 +533,7 @@ function initTagsContextMenu() {
 // Uses data-datekey to prevent missing completed tasks
 // -----------------------------------------------------
 function updateDailyProjections() {
-  if (CURRENT_MODE !== 'pb') return;
+  if (CURRENT_MODE !== 'pb' && CURRENT_MODE !== 'sound') return;
 
   const now = new Date(); // Native midnight rollover
   
@@ -709,29 +709,31 @@ function updateDailyProjections() {
     }
   });
 
-  // 4. Inject Badges into the respective Calendar Headers
-  datesInfo.forEach(dayInfo => {
-    let projPts = dayInfo.uncompletedPoints;
-    
-    // Always combine uncompleted with verified completed totals.
-    // For "Today", we merge the DOM's completed state with the Extension's memory safely.
-    if (dayInfo.isToday) {
-      projPts += Math.max(CURRENT_DAILY_SCORE_MEM, dayInfo.completedPoints);
-    } else {
-      projPts += dayInfo.completedPoints;
-    }
-
-    if (dayInfo.targetH2) {
-      let badge = dayInfo.targetH2.querySelector('.pb-day-badge');
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'pb-day-badge';
-        dayInfo.targetH2.style.position = 'relative';
-        dayInfo.targetH2.appendChild(badge);
+  // 4. Inject Badges into the respective Calendar Headers (Only for PB mode)
+  if (CURRENT_MODE === 'pb') {
+    datesInfo.forEach(dayInfo => {
+      let projPts = dayInfo.uncompletedPoints;
+      
+      // Always combine uncompleted with verified completed totals.
+      // For "Today", we merge the DOM's completed state with the Extension's memory safely.
+      if (dayInfo.isToday) {
+        projPts += Math.max(CURRENT_DAILY_SCORE_MEM, dayInfo.completedPoints);
+      } else {
+        projPts += dayInfo.completedPoints;
       }
-      badge.innerText = `Proj: ${projPts}`;
-    }
-  });
+
+      if (dayInfo.targetH2) {
+        let badge = dayInfo.targetH2.querySelector('.pb-day-badge');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'pb-day-badge';
+          dayInfo.targetH2.style.position = 'relative';
+          dayInfo.targetH2.appendChild(badge);
+        }
+        badge.innerText = `Proj: ${projPts}`;
+      }
+    });
+  }
 }
 
 // ==========================================
@@ -809,9 +811,28 @@ chrome.storage.sync.get(['extensionMode', 'pbTierCount', 'defaultPoints', 'pbCol
       REMOVED_TAGS = data.removedTags;
   }
 
-  if (CURRENT_MODE === 'pb') {
+  if (CURRENT_MODE === 'pb' || CURRENT_MODE === 'sound') {
     initPBConfig(tierCount, colorTheme, customHex);
-    initPBMode();
+    
+    if (CURRENT_MODE === 'pb') {
+      initPBMode();
+    } else {
+      // Sound Only Mode with Tagging support
+      initTagsContextMenu();
+      injectPBStyles(); // Need styles for context menu
+      
+      // Start the task coloring loop
+      setInterval(updateDailyProjections, 2000);
+      
+      let debounceTimer;
+      const observer = new MutationObserver(() => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            updateDailyProjections();
+          }, 300); 
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   } else {
     document.getElementById('pb-ui-root')?.remove();
     document.getElementById('pb-styles')?.remove();

@@ -299,8 +299,8 @@
     <input type="number" id="default-points-input" min="1" max="100" value="2">
   </div>
 
-  <!-- PB Specific Settings -->
-  <div class="settings-panel" id="pb-settings">
+  <!-- Color Theme Settings (Shared between PB and Sound modes) -->
+  <div class="settings-panel" id="color-settings">
     <label for="pb-color-select">Bar Color Theme</label>
     <select id="pb-color-select" style="margin-bottom: 8px;">
       <option value="green">Green (Default)</option>
@@ -313,7 +313,10 @@
       <input type="color" id="pb-custom-color" value="#a855f7">
       <label for="pb-custom-color" style="margin-bottom: 0; font-weight: normal; color: #e8eaed; cursor: pointer;">Pick Base Hex</label>
     </div>
+  </div>
 
+  <!-- PB Specific Settings -->
+  <div class="settings-panel" id="pb-settings">
     <label for="pb-tier-select">PB Mode Settings</label>
     <select id="pb-tier-select">
       <option value="5">5 Tiers (God-Like at 50)</option>
